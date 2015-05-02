@@ -1,2 +1,10 @@
 *.o
 *.so
+CMakeCache.txt
+CMakeFiles/
+CMakeLists.txt.user
+Makefile
+cmake_install.cmake
+srslog
+srslog.cbp
+
