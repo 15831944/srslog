@@ -77,3 +77,31 @@ int srs_get_log_level(std::string level)
         return SrsLogLevel::Disabled;
     }
 }
+
+string srs_get_peer_ip(int fd)
+{
+    std::string ip;
+
+    // discovery client information
+    sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    if (getpeername(fd, (sockaddr*)&addr, &addrlen) == -1) {
+        return ip;
+    }
+    srs_verbose("get peer name success.");
+
+    // ip v4 or v6
+    char buf[INET6_ADDRSTRLEN];
+    memset(buf, 0, sizeof(buf));
+
+    if ((inet_ntop(addr.sin_family, &addr.sin_addr, buf, sizeof(buf))) == NULL) {
+        return ip;
+    }
+    srs_verbose("get peer ip of client ip=%s, fd=%d", buf, fd);
+
+    ip = buf;
+
+    srs_verbose("get peer ip success. ip=%s, fd=%d", ip.c_str(), fd);
+
+    return ip;
+}

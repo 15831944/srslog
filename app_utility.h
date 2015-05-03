@@ -6,3 +6,4 @@ using namespace std;
 
 vector<string>& srs_get_local_ipv4_ips();
 int srs_get_log_level(std::string level);
+string srs_get_peer_ip(int fd);
