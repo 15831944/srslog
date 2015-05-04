@@ -3,6 +3,7 @@
 // success, ok
 #define ERROR_SUCCESS                       0
 
+#define ERROR_POINT_NULL                    1
 ///////////////////////////////////////////////////////
 // system error.
 ///////////////////////////////////////////////////////
@@ -60,15 +61,5 @@
 #define ERROR_ST_EXCEED_THREADS             1051
 
 #define ERROR_RTMP_EDGE_RELOAD              2000
-#define ERROR_SYSTEM_CONFIG_INVALID         3000
-#define ERROR_SYSTEM_CONFIG_BLOCK_END       3001
-#define ERROR_SYSTEM_CONFIG_EOF             3002
-#define ERROR_SYSTEM_CONFIG_BLOCK_START     3003
-#define ERROR_SYSTEM_CONFIG_DIRECTIVE       3004
-#define ERROR_SYSTEM_FILE_ALREADY_OPENED    4000
-#define ERROR_SYSTEM_FILE_OPENE             4001
-#define ERROR_SYSTEM_FILE_CLOSE             4002
-#define ERROR_SYSTEM_FILE_READ              4003
-#define ERROR_SYSTEM_FILE_EOF               4004
 
 bool srs_is_client_gracefully_close(int error_code);
