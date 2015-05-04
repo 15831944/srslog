@@ -8,3 +8,4 @@ cmake_install.cmake
 srslog
 srslog.cbp
 objs/srs.pid
+objs
