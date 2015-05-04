@@ -107,6 +107,7 @@ private:
     virtual int listen_rtmp();
     virtual int listen_http_api();
     virtual int listen_http_stream();
+    virtual int listen_screen_shot();
     /**
     * close the listeners for specified type,
     * remove the listen object from manager.

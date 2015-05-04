@@ -7,6 +7,7 @@
 #include "stdlib.h"
 #include <algorithm>
 #include "app_macros.h"
+#include "app_screenshot_conn.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -252,15 +253,19 @@ int SrsServer::listen()
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = listen_rtmp()) != ERROR_SUCCESS) {
-        return ret;
-    }
+//    if ((ret = listen_rtmp()) != ERROR_SUCCESS) {
+//        return ret;
+//    }
 
-    if ((ret = listen_http_api()) != ERROR_SUCCESS) {
-        return ret;
-    }
+//    if ((ret = listen_http_api()) != ERROR_SUCCESS) {
+//        return ret;
+//    }
 
-    if ((ret = listen_http_stream()) != ERROR_SUCCESS) {
+//    if ((ret = listen_http_stream()) != ERROR_SUCCESS) {
+//        return ret;
+//    }
+
+    if ((ret = listen_screen_shot()) != ERROR_SUCCESS) {
         return ret;
     }
 
@@ -525,6 +530,30 @@ int SrsServer::listen_http_stream()
     return ret;
 }
 
+int SrsServer::listen_screen_shot()
+{
+    int ret = ERROR_SUCCESS;
+
+    // stream service port.
+    std::vector<std::string> ports = _srs_config->get_listen();
+    srs_assert((int) ports.size() > 0);
+
+    close_listeners(SrsListenerScreenShot);
+
+    for (int i = 0; i < (int) ports.size(); i++) {
+        SrsListener *listener = new SrsListener(this, SrsListenerScreenShot);
+        listeners.push_back(listener);
+
+        int port = ::atoi(ports[i].c_str());
+        if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
+            srs_error("screen shot listen at port %d failed. ret=%d", port, ret);
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
 void SrsServer::close_listeners(SrsListenerType type)
 {
     std::vector<SrsListener*>::iterator it;
@@ -611,7 +640,7 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         return ret;
 #endif
     } else if (type == SrsListenerScreenShot) {
-
+        conn = new SrsScreenShotConn(this, client_stfd);
     }
     else {
         // TODO: FIXME: handler others

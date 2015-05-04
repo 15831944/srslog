@@ -124,10 +124,6 @@ int run_master()
         return ret;
     }
 
-//    if ((ret = _srs_server->calculate_flow()) != ERROR_SUCCESS) {
-//        return ret;
-//    }
-
     if ((ret = _srs_server->cycle()) != ERROR_SUCCESS) {
         return ret;
     }

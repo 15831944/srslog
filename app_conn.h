@@ -7,6 +7,19 @@
 class SrsServer;
 
 /**
+* srs connection type.
+*/
+enum SrsConnType
+{
+    SrsConnUnknown = 0,
+    SrsConnRtmp,
+    SrsConnHttpConn,
+    SrsConnHttpApi,
+    SrsConnInquiry,
+    SrsConnAccount,
+};
+
+/**
 * the basic connection of SRS,
 * all connections accept from listener must extends from this base class,
 * server will add the connection to manager, and delete it when remove.
@@ -32,6 +45,9 @@ protected:
     * the ip of client.
     */
     std::string ip;
+public:
+    SrsConnType type_;
+
 public:
     SrsConnection(SrsServer* srs_server, st_netfd_t client_stfd);
     virtual ~SrsConnection();
