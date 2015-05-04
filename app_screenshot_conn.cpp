@@ -93,7 +93,6 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
         return ;
     }
 
-    srs_trace("ts file=%s", ts_file.c_str());
     //shot a picture from ts file. jpg format.
 
     //jpg to base64
