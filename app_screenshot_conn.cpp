@@ -4,6 +4,7 @@
 #include "app_error_code.h"
 #include <stdlib.h>
 #include "app_json.h"
+#include <dirent.h>
 
 SrsScreenShotConn::SrsScreenShotConn(SrsServer *srs_server, st_netfd_t client_stfd)
     : SrsConnection(srs_server, client_stfd)
@@ -80,12 +81,26 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
 {
     //parse json.
     ScreenShotData res;
-    int ret = parse_json(json_data, len, res);
-    if (!ret) {
+    if (!parse_json(json_data, len, res)) {
         srs_error("do_screen_shot_job:parse json failed.");
         return ;
     }
 
+    //get a ts file.
+    std::string ts_file;
+    if (!get_tsfile(res.stream.c_str(), ts_file)) {
+        srs_error("do_screen_shot_job: get ts file failed. stream name=%s", res.stream.c_str());
+        return ;
+    }
+
+    srs_trace("ts file=%s", ts_file.c_str());
+    //shot a picture from ts file. jpg format.
+
+    //jpg to base64
+
+    //make send package
+
+    //send to client.
 }
 
 bool SrsScreenShotConn::parse_json(char *json_data, int len, ScreenShotData &res)
@@ -121,6 +136,55 @@ bool SrsScreenShotConn::parse_json(char *json_data, int len, ScreenShotData &res
 
     if (NULL != js) {
         nx_json_free(js);
+    }
+
+    return true;
+}
+
+bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
+{
+    std::vector<std::string> res;
+    bool ret = ListDirectoryFile("/var/hls/live", res);
+    if (!ret || res.size() <= 0) {
+        return false;
+    }
+
+    for (int i = 0; i < res.size(); ++i) {
+        if (NULL != strstr(res.at(i).c_str(), stream)) {
+            file_name = res.at(i);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
+{
+    DIR *dp ;
+    struct dirent *dirp;
+
+    if( (dp = opendir( path )) == NULL )
+    {
+        return false;
+    }
+
+    while( ( dirp = readdir( dp ) ) != NULL)
+    {
+        if(strcmp(dirp->d_name,".")==0  || strcmp(dirp->d_name,"..")==0)
+            continue;
+
+        int size = strlen(dirp->d_name);
+
+        //for ts file, len at least 4.
+        if(size < 4)
+            continue;
+
+        if(strcmp( ( dirp->d_name + (size - 3) ) , ".ts") != 0)
+            continue;
+
+        std::string filename = dirp->d_name;
+        vec_files.push_back(filename);
     }
 
     return true;

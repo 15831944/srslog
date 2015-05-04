@@ -5,6 +5,7 @@
 #include "app_st_socket.h"
 #include "app_screen_shot_server.h"
 #include <stdint.h>
+#include <vector>
 
 typedef struct ScreenShotData
 {
@@ -41,4 +42,7 @@ private:
 private:
     void do_screen_shot_job(char *json_data, int len);
     bool parse_json(char *json_data, int len, ScreenShotData &res);
+    bool get_tsfile(const char *stream, std::string &file_name);
 };
+
+bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files);
