@@ -141,3 +141,5 @@ public:
     virtual int on_reload_http_stream_disabled();
     virtual int on_reload_http_stream_updated();
 };
+
+extern SrsServer* _srs_server;

@@ -8,6 +8,8 @@
 #include <algorithm>
 #include "app_macros.h"
 
+SrsServer* _srs_server = new SrsServer();
+
 SrsServer::SrsServer()
 {
     signal_reload = false;

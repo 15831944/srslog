@@ -163,3 +163,22 @@ void srs_update_system_time_ms()
     srs_info("system time updated, startup=%"PRId64"us, now=%"PRId64"us",
         _srs_system_time_startup_time, _srs_system_time_us_cache);
 }
+
+bool srs_is_little_endian()
+{
+    // convert to network(big-endian) order, if not equals,
+    // the system is little-endian, so need to convert the int64
+    static int little_endian_check = -1;
+
+    if(little_endian_check == -1) {
+        union {
+            int32_t i;
+            int8_t c;
+        } little_check_union;
+
+        little_check_union.i = 0x01;
+        little_endian_check = little_check_union.c;
+    }
+
+    return (little_endian_check == 1);
+}

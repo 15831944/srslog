@@ -10,3 +10,4 @@ int srs_get_log_level(std::string level);
 string srs_get_peer_ip(int fd);
 int64_t srs_get_system_time_ms();
 void srs_update_system_time_ms();
+bool srs_is_little_endian();
