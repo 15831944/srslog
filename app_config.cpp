@@ -1222,7 +1222,7 @@ int SrsConfig::parse_options(int argc, char** argv)
     _cwd = cwd;
 
     // config
-    show_help = true;
+    show_help = false;
     for (int i = 1; i < argc; i++) {
         if ((ret = parse_argv(i, argv)) != ERROR_SUCCESS) {
             return ret;

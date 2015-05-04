@@ -1,5 +1,6 @@
 #pragma once
 #include "app_thread.h"
+#include <signal.h>
 
 // signal defines.
 #define SIGNAL_RELOAD SIGHUP

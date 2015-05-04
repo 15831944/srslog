@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include "app_server.h"
 
+SrsSignalManager *SrsSignalManager::instance = NULL;
+
 SrsSignalManager::SrsSignalManager(SrsServer* server)
 {
     SrsSignalManager::instance = this;

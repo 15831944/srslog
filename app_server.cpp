@@ -1,4 +1,12 @@
 #include "app_server.h"
+#include "app_log.h"
+#include "app_config.h"
+#include "app_utility.h"
+#include "fcntl.h"
+#include "app_st.h"
+#include "stdlib.h"
+#include <algorithm>
+#include "app_macros.h"
 
 SrsServer::SrsServer()
 {
@@ -574,9 +582,10 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         return ret;
     }
 
+    //todo. by yangkai.
     SrsConnection* conn = NULL;
     if (type == SrsListenerRtmpStream) {
-        conn = new SrsRtmpConn(this, client_stfd);
+//        conn = new SrsRtmpConn(this, client_stfd);
     } else if (type == SrsListenerHttpApi) {
 #ifdef SRS_AUTO_HTTP_API
         conn = new SrsHttpApi(this, client_stfd, http_api_handler);

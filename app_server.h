@@ -5,6 +5,7 @@
 #include "app_conn.h"
 #include "app_listener.h"
 #include "app_kbps.h"
+#include "app_signal_manager.h"
 
 /**
 * SRS RTMP server, initialize and listen,

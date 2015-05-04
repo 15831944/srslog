@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <st.h>
 
 // the context for multiple clients.
 class ISrsThreadContext

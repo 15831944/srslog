@@ -1,4 +1,5 @@
 #include "app_thread.h"
+#include "app_log.h"
 
 ISrsThreadHandler::ISrsThreadHandler()
 {

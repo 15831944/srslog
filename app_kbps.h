@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "app_protocal_statistic.h"
 
 /**
 * the interface which provices delta of bytes.
@@ -12,6 +13,79 @@ public:
 public:
     virtual int64_t get_send_bytes_delta() = 0;
     virtual int64_t get_recv_bytes_delta() = 0;
+};
+
+/**
+* a kbps sample, for example, 1minute kbps,
+* 10minute kbps sample.
+*/
+class SrsKbpsSample
+{
+public:
+    int64_t bytes;
+    int64_t time;
+    int kbps;
+public:
+    SrsKbpsSample();
+};
+
+/**
+* a slice of kbps statistic, for input or output.
+* a slice contains a set of sessions, which has a base offset of bytes,
+* where a slice is:
+*       starttime(oldest session startup time)
+*               bytes(total bytes of previous sessions)
+*               io_bytes_base(bytes offset of current session)
+*                       last_bytes(bytes of current session)
+* so, the total send bytes now is:
+*       send_bytes = bytes + last_bytes - io_bytes_base
+* so, the bytes sent duration current session is:
+*       send_bytes = last_bytes - io_bytes_base
+* @remark use set_io to start new session.
+* @remakr the slice is a data collection object driven by SrsKbps.
+*/
+class SrsKbpsSlice
+{
+private:
+    union slice_io {
+        ISrsProtocolStatistic* in;
+        ISrsProtocolStatistic* out;
+    };
+public:
+    // the slice io used for SrsKbps to invoke,
+    // the SrsKbpsSlice itself never use it.
+    slice_io io;
+    // session startup bytes
+    // @remark, use total_bytes() to get the total bytes of slice.
+    int64_t bytes;
+    // slice starttime, the first time to record bytes.
+    int64_t starttime;
+    // session startup bytes number for io when set it,
+    // the base offset of bytes for io.
+    int64_t io_bytes_base;
+    // last updated bytes number,
+    // cache for io maybe freed.
+    int64_t last_bytes;
+    // samples
+    SrsKbpsSample sample_30s;
+    SrsKbpsSample sample_1m;
+    SrsKbpsSample sample_5m;
+    SrsKbpsSample sample_60m;
+public:
+    // for the delta bytes.
+    int64_t delta_bytes;
+public:
+    SrsKbpsSlice();
+    virtual ~SrsKbpsSlice();
+public:
+    /**
+    * get current total bytes.
+    */
+    virtual int64_t get_total_bytes();
+    /**
+    * resample all samples.
+    */
+    virtual void sample();
 };
 
 /**

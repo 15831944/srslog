@@ -1,4 +1,19 @@
 #include "app_st.h"
+#include "app_log.h"
+
+#include <sys/epoll.h>
+bool srs_st_epoll_is_supported(void)
+{
+    struct epoll_event ev;
+
+    ev.events = EPOLLIN;
+    ev.data.ptr = NULL;
+    /* Guaranteed to fail */
+    epoll_ctl(-1, EPOLL_CTL_ADD, -1, &ev);
+
+    return (errno != ENOSYS);
+}
+
 int srs_init_st()
 {
     int ret = ERROR_SUCCESS;

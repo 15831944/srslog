@@ -4,6 +4,7 @@
 #include "app_utility.h"
 #include "app_log.h"
 #include "app_server.h"
+#include "app_st.h"
 
 SrsConnection::SrsConnection(SrsServer* srs_server, st_netfd_t client_stfd)
 {

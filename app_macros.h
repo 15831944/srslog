@@ -94,6 +94,18 @@
 #define SRS_CONF_DEFAULT_TRANSCODE_IFORMAT "flv"
 #define SRS_CONF_DEFAULT_TRANSCODE_OFORMAT "flv"
 
+// system interval
+// all resolution times should be times togother,
+// for example, system-time is 3(300ms),
+// then rusage can be 3*x, for instance, 3*10=30(3s),
+// the meminfo canbe 30*x, for instance, 30*2=60(6s)
+#define SRS_SYS_CYCLE_INTERVAL 100
+
+// update time interval:
+//      SRS_SYS_CYCLE_INTERVAL * SRS_SYS_TIME_RESOLUTION_MS_TIMES
+// @see SYS_TIME_RESOLUTION_US
+#define SRS_SYS_TIME_RESOLUTION_MS_TIMES 3
+
 ///////////////////////////////////////////////////////////
 // RTMP consts values
 ///////////////////////////////////////////////////////////
