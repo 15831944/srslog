@@ -587,7 +587,13 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
     //todo. by yangkai.
     SrsConnection* conn = NULL;
     if (type == SrsListenerRtmpStream) {
-//        conn = new SrsRtmpConn(this, client_stfd);
+#ifdef SRS_RTMP_SERVER
+        conn = new SrsRtmpConn(this, client_stfd);
+#else
+        srs_warn("close http client for server not support rtmp-server");
+        srs_close_stfd(client_stfd);
+        return ret;
+#endif
     } else if (type == SrsListenerHttpApi) {
 #ifdef SRS_AUTO_HTTP_API
         conn = new SrsHttpApi(this, client_stfd, http_api_handler);
@@ -604,7 +610,10 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         srs_close_stfd(client_stfd);
         return ret;
 #endif
-    } else {
+    } else if (type == SrsListenerScreenShot) {
+
+    }
+    else {
         // TODO: FIXME: handler others
     }
     srs_assert(conn);
