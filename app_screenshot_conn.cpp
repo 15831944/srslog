@@ -89,19 +89,29 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
         return ;
     }
 
-    //get a ts file.
-    std::string tsfile;
-    if (!get_tsfile(screenshotdata.stream.c_str(), tsfile)) {
-        srs_error("do_screen_shot_job: get ts file failed. stream name=%s", screenshotdata.stream.c_str());
-        return ;
+    std::stringstream jpgfile;
+    jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
+
+    std::stringstream videofile;
+    //live mode
+    if (0 == strcmp("live",screenshotdata.app.c_str()))
+    {
+        std::string tsfile;
+        if (!get_tsfile(screenshotdata.stream.c_str(), tsfile)) {
+            srs_error("do_screen_shot_job: get ts file failed. stream name=%s", screenshotdata.stream.c_str());
+            return ;
+        }
+        videofile << "/var/hls/" << screenshotdata.app << "/" << tsfile;
+    }
+    else if (0 == strcmp("vod", screenshotdata.app.c_str())) //vod mode
+    {
+        videofile << "/var/hls/" << screenshotdata.app << "/" << screenshotdata.stream;//vod file name.
     }
 
     //shot a picture from ts file. jpg format.
-    std::stringstream jpgfile;
-    jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
-    std::stringstream videofile;
-    videofile << "/var/hls/" << screenshotdata.app << "/" << tsfile;
     shot_picture(const_cast<char *>(videofile.str().c_str()), const_cast<char *>(jpgfile.str().c_str()));
+
+    usleep(1000 * 200);
 
     //jpg to base64
     Jpg2Base64 jb;
