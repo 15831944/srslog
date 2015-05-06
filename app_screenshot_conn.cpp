@@ -75,21 +75,30 @@ int SrsScreenShotConn::do_cycle()
         return ret;
     }
 
-    do_screen_shot_job(json_buff, json_len);
+    ClientReqData clientdata;
+    parse_client_data(json_buff, json_len, clientdata);
 
+    if (0 == strcmp("get_picture", clientdata.action.c_str()))
+    {
+        do_screen_shot_job(clientdata);
+    }
+    else if (0 == strcmp("get_vod_file_status", clientdata.action.c_str()))
+    {
+        do_check_vod_file_status(clientdata);
+    }
     return ret;
 }
 
-void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
+void SrsScreenShotConn::parse_client_data(char *json_data, int len, ClientReqData &clientdata)
 {
-    srs_trace("do_screen_shot_job recv client: %s", json_data);
-    //parse json.
-    ScreenShotData screenshotdata;
-    if (!parse_json(json_data, len, screenshotdata)) {
+    if (!parse_json(json_data, len, clientdata)) {
         srs_error("do_screen_shot_job:parse json failed.");
         return ;
     }
+}
 
+void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
+{
     std::stringstream jpgfile;
     jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
 
@@ -122,7 +131,7 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
 
     //make send package
     std::stringstream res;
-    make_send_pack(screenshotdata, buff_base64, base64_len, res);
+    make_screen_shot_pack(screenshotdata, buff_base64, base64_len, res);
 
     //send to client.
     ssize_t actually_write = 0;
@@ -131,8 +140,6 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
         srs_error("do get screen shot error, ret=%d", ret);
     }
 
-    srs_trace("do_screen_shot_job send to client: %s", res.str().c_str());
-
     if (NULL != buff_base64)
     {
         delete [] buff_base64;
@@ -140,12 +147,43 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
     }
 }
 
-bool SrsScreenShotConn::parse_json(char *json_data, int len, ScreenShotData &res)
+void SrsScreenShotConn::do_check_vod_file_status(ClientReqData &clientdata)
+{
+    std::stringstream videofile;
+    videofile << "/var/hls/vod/" << clientdata.stream;//vod file name.
+    int ret = is_file_exist(videofile.str().c_str());
+    if (0 == ret) //exist
+    {
+        clientdata.file_status = "1";
+    }
+    else//not exist
+    {
+        clientdata.file_status = "0";
+    }
+
+    std::stringstream res;
+    make_file_status_pack(clientdata, res);
+
+    //send to client.
+    ssize_t actually_write = 0;
+    int ret2 = ERROR_SUCCESS;
+    if (ret2 = skt->write(const_cast<char *>(res.str().c_str()), res.str().length(), &actually_write)) {
+        srs_error("do get vod file status error, ret=%d", ret);
+    }
+}
+
+bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
 {
     const nx_json* js = nx_json_parse_utf8(json_data);
     if (NULL == js){
         return false;
     }
+    const nx_json* js_action = nx_json_get(js, "action");
+    if (NULL == js_action) {
+        return false;
+    }
+
+    res.action = js_action->text_value;
 
     const nx_json* js_params = nx_json_get(js, "params");
     if (NULL == js_params) {
@@ -208,7 +246,7 @@ bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name)
     return true;
 }
 
-void SrsScreenShotConn::make_send_pack(const ScreenShotData &screenshotdata, char *buff_base64, int len_base64, std::stringstream &res)
+void SrsScreenShotConn::make_screen_shot_pack(const ClientReqData &screenshotdata, char *buff_base64, int len_base64, std::stringstream &res)
 {
     std::stringstream datas;
 
@@ -225,7 +263,27 @@ void SrsScreenShotConn::make_send_pack(const ScreenShotData &screenshotdata, cha
             << datas.str().c_str()
             << __SRS_JARRAY_END
         << __SRS_JOBJECT_END
-            ;
+           ;
+}
+
+void SrsScreenShotConn::make_file_status_pack(const ClientReqData &clientdata, std::stringstream &res)
+{
+    std::stringstream datas;
+
+    datas << __SRS_JOBJECT_START
+            << __SRS_JFIELD_STR("app", clientdata.app.c_str()) << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_STR("stream", clientdata.stream.c_str()) << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_STR("status", clientdata.file_status.c_str())
+            << __SRS_JOBJECT_END;
+
+    res << __SRS_JOBJECT_START
+            << __SRS_JFIELD_STR("succ", true) << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_STR("msg", "get vod file status result.") << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_NAME("data") << __SRS_JARRAY_START
+            << datas.str().c_str()
+            << __SRS_JARRAY_END
+        << __SRS_JOBJECT_END
+           ;
 }
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
@@ -257,4 +315,13 @@ bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
     }
 
     return true;
+}
+
+int is_file_exist(const char *file_path)
+{
+    if (NULL == file_path)
+        return -1;
+    if (0 == access(file_path, F_OK))
+        return 0;
+    return -1;
 }

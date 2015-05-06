@@ -7,11 +7,13 @@
 #include <stdint.h>
 #include <vector>
 
-typedef struct ScreenShotData
+typedef struct ClientReqData
 {
+    std::string action;
     std::string app;
     std::string stream;
-}ScreenShotData;
+    std::string file_status;
+}ClientReqData;
 
 //the timeout to wait client data,
 //if timeout, close the connection.
@@ -40,11 +42,15 @@ private:
     SrsStSocket* skt;
 
 private:
-    void do_screen_shot_job(char *json_data, int len);
-    bool parse_json(char *json_data, int len, ScreenShotData &res);
+    void parse_client_data(char *json_data, int len, ClientReqData &screenshotdata);
+    void do_screen_shot_job(const ClientReqData &screenshotdata);
+    void do_check_vod_file_status(ClientReqData &screenshotdata);
+    bool parse_json(char *json_data, int len, ClientReqData &res);
     bool get_tsfile(const char *stream, std::string &file_name);
     bool shot_picture(char *ts_name, char *jpg_name);
-    void make_send_pack(const ScreenShotData &data, char *buff_base64, int len_base64, std::stringstream &res);
+    void make_screen_shot_pack(const ClientReqData &data, char *buff_base64, int len_base64, std::stringstream &res);
+    void make_file_status_pack(const ClientReqData &data, std::stringstream &res);
 };
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files);
+int is_file_exist(const char *file_path);
