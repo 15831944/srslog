@@ -44,6 +44,7 @@ private:
     bool parse_json(char *json_data, int len, ScreenShotData &res);
     bool get_tsfile(const char *stream, std::string &file_name);
     bool shot_picture(char *ts_name, char *jpg_name);
+    void make_send_pack(const ScreenShotData &data, char *buff_base64, int len_base64, std::stringstream &res);
 };
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files);

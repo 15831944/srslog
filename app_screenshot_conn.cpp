@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include "execv_ffmpeg.h"
 #include <sstream>
+#include "jpg2base64.h"
 
 SrsScreenShotConn::SrsScreenShotConn(SrsServer *srs_server, st_netfd_t client_stfd)
     : SrsConnection(srs_server, client_stfd)
@@ -103,10 +104,26 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
     shot_picture(const_cast<char *>(videofile.str().c_str()), const_cast<char *>(jpgfile.str().c_str()));
 
     //jpg to base64
+    Jpg2Base64 jb;
+    char *buff_base64 = new char[1024 * 1024];
+    int base64_len = 0;
+    jb.Convert(const_cast<char *>(jpgfile.str().c_str()), buff_base64, base64_len);
 
     //make send package
+    std::stringstream res;
+    make_send_pack(screenshotdata, buff_base64, base64_len, res);
 
     //send to client.
+    ssize_t actually_write = 0;
+    int ret = ERROR_SUCCESS;
+    if (ret = skt->write(const_cast<char *>(res.str().c_str()), res.str().length(), &actually_write)) {
+        srs_error("do get screen shot error, ret=%d", ret);
+    }
+    if (NULL != buff_base64)
+    {
+        delete [] buff_base64;
+        buff_base64 = NULL;
+    }
 }
 
 bool SrsScreenShotConn::parse_json(char *json_data, int len, ScreenShotData &res)
@@ -175,6 +192,26 @@ bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name)
     ff.stop();
 
     return true;
+}
+
+void SrsScreenShotConn::make_send_pack(const ScreenShotData &screenshotdata, char *buff_base64, int len_base64, std::stringstream &res)
+{
+    std::stringstream datas;
+
+    datas << __SRS_JOBJECT_START
+            << __SRS_JFIELD_STR("app", screenshotdata.app.c_str()) << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_STR("stream", screenshotdata.stream.c_str()) << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_STR("picture", buff_base64)
+            << __SRS_JOBJECT_END;
+
+    res << __SRS_JOBJECT_START
+            << __SRS_JFIELD_STR("succ", true) << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_STR("msg", "get picture result.") << __SRS_JFIELD_CONT
+            << __SRS_JFIELD_NAME("data") << __SRS_JARRAY_START
+            << datas.str().c_str()
+            << __SRS_JARRAY_END
+        << __SRS_JOBJECT_END
+            ;
 }
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
