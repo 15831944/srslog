@@ -82,6 +82,7 @@ int SrsScreenShotConn::do_cycle()
 
 void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
 {
+    srs_trace("do_screen_shot_job recv client: %s", json_data);
     //parse json.
     ScreenShotData screenshotdata;
     if (!parse_json(json_data, len, screenshotdata)) {
@@ -129,6 +130,9 @@ void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
     if (ret = skt->write(const_cast<char *>(res.str().c_str()), res.str().length(), &actually_write)) {
         srs_error("do get screen shot error, ret=%d", ret);
     }
+
+    srs_trace("do_screen_shot_job send to client: %s", res.str().c_str());
+
     if (NULL != buff_base64)
     {
         delete [] buff_base64;
