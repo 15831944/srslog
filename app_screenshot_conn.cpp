@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "app_json.h"
 #include <dirent.h>
+#include "execv_ffmpeg.h"
+#include <sstream>
 
 SrsScreenShotConn::SrsScreenShotConn(SrsServer *srs_server, st_netfd_t client_stfd)
     : SrsConnection(srs_server, client_stfd)
@@ -80,20 +82,25 @@ int SrsScreenShotConn::do_cycle()
 void SrsScreenShotConn::do_screen_shot_job(char *json_data, int len)
 {
     //parse json.
-    ScreenShotData res;
-    if (!parse_json(json_data, len, res)) {
+    ScreenShotData screenshotdata;
+    if (!parse_json(json_data, len, screenshotdata)) {
         srs_error("do_screen_shot_job:parse json failed.");
         return ;
     }
 
     //get a ts file.
-    std::string ts_file;
-    if (!get_tsfile(res.stream.c_str(), ts_file)) {
-        srs_error("do_screen_shot_job: get ts file failed. stream name=%s", res.stream.c_str());
+    std::string tsfile;
+    if (!get_tsfile(screenshotdata.stream.c_str(), tsfile)) {
+        srs_error("do_screen_shot_job: get ts file failed. stream name=%s", screenshotdata.stream.c_str());
         return ;
     }
 
     //shot a picture from ts file. jpg format.
+    std::stringstream jpgfile;
+    jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
+    std::stringstream videofile;
+    videofile << "/var/hls/" << screenshotdata.app << "/" << tsfile;
+    shot_picture(const_cast<char *>(videofile.str().c_str()), const_cast<char *>(jpgfile.str().c_str()));
 
     //jpg to base64
 
@@ -156,6 +163,18 @@ bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
     }
 
     return false;
+}
+
+bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name)
+{
+    Execv_ffmpeg ff;
+    ff.SetCmd("./ffmpeg/ffmpeg");
+    ff.SetParamsScreenShot(video_name, jpg_name);
+    ff.start();
+    ff.cycle();
+    ff.stop();
+
+    return true;
 }
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
