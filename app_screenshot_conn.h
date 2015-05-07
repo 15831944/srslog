@@ -13,6 +13,7 @@ typedef struct ClientReqData
     std::string app;
     std::string stream;
     std::string file_status;
+    std::string time_offset;
 }ClientReqData;
 
 //the timeout to wait client data,
