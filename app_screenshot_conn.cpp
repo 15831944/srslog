@@ -179,13 +179,13 @@ bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
         return false;
     }
     const nx_json* js_action = nx_json_get(js, "action");
-    if (NULL != js_action) {
+    if (NULL == js_action) {
         return false;
     }
     res.action = js_action->text_value;
 
     const nx_json* js_params = nx_json_get(js, "params");
-    if (NULL != js_params) {
+    if (NULL == js_params) {
         return false;
     }
 
@@ -195,7 +195,7 @@ bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
     }
 
     const nx_json* js_app = nx_json_get(js_item, "app");
-    if (NULL != js_app) {
+    if (NULL == js_app) {
         return false;
     }
     res.app = js_app->text_value;
@@ -208,7 +208,10 @@ bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
 
     const nx_json* js_timeoffset = nx_json_get(js_item, "time_offset");
     if (NULL != js_timeoffset) {
-        res.time_offset = js_timeoffset->text_value;
+        if (NULL != js_timeoffset->text_value)
+        {
+            res.time_offset = js_timeoffset->text_value;
+        }
     }
 
     if (NULL != js) {
