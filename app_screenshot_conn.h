@@ -48,10 +48,12 @@ private:
     void do_check_vod_file_status(ClientReqData &screenshotdata);
     bool parse_json(char *json_data, int len, ClientReqData &res);
     bool get_tsfile(const char *stream, std::string &file_name);
-    bool shot_picture(char *ts_name, char *jpg_name);
+    bool shot_picture(char *ts_name, char *jpg_name, char *time_offset);
     void make_screen_shot_pack(const ClientReqData &data, char *buff_base64, int len_base64, std::stringstream &res);
     void make_file_status_pack(const ClientReqData &data, std::stringstream &res);
+
 };
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files);
 int is_file_exist(const char *file_path);
+int get_file_size_time (const char *filename, int &filesize, int &last_modify);

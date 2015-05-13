@@ -9,3 +9,9 @@ srslog
 srslog.cbp
 objs/srs.pid
 objs
+Known Hosts/
+bins/
+debug/
+release/
+upload/
+

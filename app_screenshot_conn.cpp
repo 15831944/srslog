@@ -2,12 +2,18 @@
 #include "app_config.h"
 #include "app_log.h"
 #include "app_error_code.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "app_json.h"
 #include <dirent.h>
 #include "execv_ffmpeg.h"
 #include <sstream>
 #include "jpg2base64.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
+
 
 SrsScreenShotConn::SrsScreenShotConn(SrsServer *srs_server, st_netfd_t client_stfd)
     : SrsConnection(srs_server, client_stfd)
@@ -52,11 +58,14 @@ int SrsScreenShotConn::do_cycle()
 
     if (NULL == screenshot) {
         ret = ERROR_POINT_NULL;
+        srs_error("NULL == screenshot");
         return ret;
     }
 
     screenshot->set_recv_timeout(SRS_CONSTS_ACCOUNT_RECV_TIMEOUT_US);
     screenshot->set_send_timeout(SRS_CONSTS_ACCOUNT_SEND_TIMEOUT_US);
+
+    srs_trace("begin recv client head data.");
 
     //recv head.
     ssize_t nsize = 0;
@@ -64,6 +73,8 @@ int SrsScreenShotConn::do_cycle()
         srs_error("read screenshot head timeout. ret=%d", ret);
         return ret;
     }
+
+    srs_trace("recv client head data success.");
 
     int json_len = atoi(head_buffer);
     enum {JOSN_BODY_LEN = 4096};
@@ -75,8 +86,17 @@ int SrsScreenShotConn::do_cycle()
         return ret;
     }
 
+    srs_trace("recv client origin:%s", json_buff);
+
     ClientReqData clientdata;
     parse_client_data(json_buff, json_len, clientdata);
+
+    srs_trace("parse data: action=%s,app=%s,stream=%s,file_status=%s, time_offset=%s",
+              clientdata.action.c_str(),
+              clientdata.app.c_str(),
+              clientdata.stream.c_str(),
+              clientdata.file_status.c_str(),
+              clientdata.time_offset.c_str());
 
     if (0 == strcmp("get_picture", clientdata.action.c_str()))
     {
@@ -99,6 +119,7 @@ void SrsScreenShotConn::parse_client_data(char *json_data, int len, ClientReqDat
 
 void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
 {
+    srs_trace("do_screen_shot_job in----");
     std::stringstream jpgfile;
     jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
 
@@ -112,22 +133,37 @@ void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
             return ;
         }
         videofile << "/var/hls/" << screenshotdata.app << "/" << tsfile;
+        //shot a picture from ts file. jpg format.
+        shot_picture(const_cast<char *>(videofile.str().c_str()),
+                     const_cast<char *>(jpgfile.str().c_str()),
+                     "3");
     }
     else if (0 == strcmp("vod", screenshotdata.app.c_str())) //vod mode
     {
         videofile << "/var/hls/" << screenshotdata.app << "/" << screenshotdata.stream;//vod file name.
+        shot_picture(const_cast<char *>(videofile.str().c_str()),
+                     const_cast<char *>(jpgfile.str().c_str()),
+                     const_cast<char *>(screenshotdata.time_offset.c_str()));
     }
 
-    //shot a picture from ts file. jpg format.
-    shot_picture(const_cast<char *>(videofile.str().c_str()), const_cast<char *>(jpgfile.str().c_str()));
 
     usleep(1000 * 200);
+
+    if (jpgfile.str().length() <= 0)
+    {
+        srs_error("shot pic to disk failed.");
+        return;
+    }
 
     //jpg to base64
     Jpg2Base64 jb;
     char *buff_base64 = new char[1024 * 1024];
     int base64_len = 0;
     jb.Convert(const_cast<char *>(jpgfile.str().c_str()), buff_base64, base64_len);
+    if (base64_len <= 0)
+    {
+        srs_error("convert to base64 failed.");
+    }
 
     //make send package
     std::stringstream res;
@@ -174,6 +210,7 @@ void SrsScreenShotConn::do_check_vod_file_status(ClientReqData &clientdata)
 
 bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
 {
+    srs_trace("parse_json, data:%s", json_data);
     const nx_json* js = nx_json_parse_utf8(json_data);
     if (NULL == js){
         return false;
@@ -227,23 +264,53 @@ bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
     bool ret = ListDirectoryFile("/var/hls/live", res);
     if (!ret || res.size() <= 0) {
         return false;
-    }
+    }       
 
+    std::vector<std::string> res_tsfiles;
     for (int i = 0; i < res.size(); ++i) {
         if (NULL != strstr(res.at(i).c_str(), stream)) {
-            file_name = res.at(i);
-            return true;
+            res_tsfiles.push_back(res.at(i));
         }
     }
 
-    return false;
+    if (res_tsfiles.size() <= 0)
+    {
+        srs_error("res_tsfiles size==0");
+        return false;
+    }
+
+    int filesize = 0;
+    int last_modify = 0;
+    int index = 0;
+    for (int j = 0; j < res_tsfiles.size(); ++j) {
+        int tmp_modify = 0;
+        std::stringstream ss;
+        ss << "/var/hls/live/" << res.at(j).c_str();
+        get_file_size_time(ss.str().c_str(), filesize, tmp_modify);
+        if (tmp_modify > last_modify)
+        {
+            last_modify = tmp_modify;
+            index = j;
+        }
+    }
+
+    if (res_tsfiles.size() >= index)
+    {
+        file_name = res_tsfiles[index];
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
 }
 
-bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name)
+bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name, char *time_offset)
 {
     Execv_ffmpeg ff;
     ff.SetCmd("./ffmpeg/ffmpeg");
-    ff.SetParamsScreenShot(video_name, jpg_name);
+    ff.set_params(video_name, jpg_name, time_offset);
     ff.start();
     ff.cycle();
     ff.stop();
@@ -329,4 +396,28 @@ int is_file_exist(const char *file_path)
     if (0 == access(file_path, F_OK))
         return 0;
     return -1;
+}
+
+int get_file_size_time (const char *filename, int &filesize, int &last_modify)
+{  
+    struct stat statbuf;
+    if (stat (filename, &statbuf) == -1)
+    {
+        return (-1);
+    }
+
+    if (S_ISDIR (statbuf.st_mode))
+        return (1);
+
+    if (S_ISREG (statbuf.st_mode))
+    {
+        // printf ("%s size：%ld bytes\tmodified at %s",
+        // filename, statbuf.st_size, ctime(&statbuf.st_mtime)); 字符串的形式
+        //        printf ("%s size：%ld bytes\tmodified at %d\n",
+        //                filename, statbuf.st_size, (statbuf.st_mtime));//utc时间形式
+        filesize = statbuf.st_size;
+        last_modify = (statbuf.st_mtime);
+    }
+
+    return (0);
 }

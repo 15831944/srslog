@@ -17,8 +17,12 @@ private:
     int status_;
 public:
     void SetCmd(char *cmd);
-    void SetParamsScreenShot(char *ts_file_name, char *jpg_name);
+    void set_params(char *ts_file_name, char *jpg_name, char *time_offset);
+    void set_params_vod(char *ts_file_name, char *jpg_name, char* time_offset);
     int start();
     int cycle();
     void stop();
 };
+
+int get_file_size_time (const char *filename, int &filesize, int &last_modify);
+int generate_rand(int X, int Y);
