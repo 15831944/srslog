@@ -176,6 +176,7 @@ void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
         srs_error("do get screen shot error, ret=%d", ret);
     }
 
+    remove(jpgfile.str().c_str());
     if (NULL != buff_base64)
     {
         delete [] buff_base64;
