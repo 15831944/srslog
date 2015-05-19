@@ -65,16 +65,12 @@ int SrsScreenShotConn::do_cycle()
     screenshot->set_recv_timeout(SRS_CONSTS_ACCOUNT_RECV_TIMEOUT_US);
     screenshot->set_send_timeout(SRS_CONSTS_ACCOUNT_SEND_TIMEOUT_US);
 
-    srs_trace("begin recv client head data.");
-
     //recv head.
     ssize_t nsize = 0;
     if ((ret = skt->read(head_buffer, HEAD_BUFFER_LEN - 1, &nsize)) != ERROR_SUCCESS) {
         srs_error("read screenshot head timeout. ret=%d", ret);
         return ret;
     }
-
-    srs_trace("recv client head data success.");
 
     int json_len = atoi(head_buffer);
     enum {JOSN_BODY_LEN = 4096};
@@ -85,8 +81,6 @@ int SrsScreenShotConn::do_cycle()
         srs_error("read screen json body timeout. ret=%d", ret);
         return ret;
     }
-
-    srs_trace("recv client origin:%s", json_buff);
 
     ClientReqData clientdata;
     parse_client_data(json_buff, json_len, clientdata);
@@ -119,7 +113,6 @@ void SrsScreenShotConn::parse_client_data(char *json_data, int len, ClientReqDat
 
 void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
 {
-    srs_trace("do_screen_shot_job in----");
     std::stringstream jpgfile;
     jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
 
@@ -176,7 +169,12 @@ void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
         srs_error("do get screen shot error, ret=%d", ret);
     }
 
-    remove(jpgfile.str().c_str());
+    int jpg_rm_res = remove(jpgfile.str().c_str());
+    if (jpg_rm_res < 0)
+    {
+        srs_error("remove jpg failed, err=%d", errno);
+    }
+
     if (NULL != buff_base64)
     {
         delete [] buff_base64;
@@ -211,7 +209,6 @@ void SrsScreenShotConn::do_check_vod_file_status(ClientReqData &clientdata)
 
 bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
 {
-    srs_trace("parse_json, data:%s", json_data);
     const nx_json* js = nx_json_parse_utf8(json_data);
     if (NULL == js){
         return false;
@@ -276,7 +273,7 @@ bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
 
     if (res_tsfiles.size() <= 0)
     {
-        srs_error("res_tsfiles size==0");
+        srs_error("can not find ts files of streamname=%s", stream);
         return false;
     }
 
@@ -361,7 +358,7 @@ void SrsScreenShotConn::make_file_status_pack(const ClientReqData &clientdata, s
 
 bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
 {
-    DIR *dp ;
+    DIR *dp = NULL;
     struct dirent *dirp;
 
     if( (dp = opendir( path )) == NULL )
@@ -376,7 +373,7 @@ bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
 
         int size = strlen(dirp->d_name);
 
-        //for ts file, len at least 4.
+        //for ts or mp4 file, len at least 4.
         if(size < 4)
             continue;
 
@@ -385,6 +382,11 @@ bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files)
 
         std::string filename = dirp->d_name;
         vec_files.push_back(filename);
+    }
+
+    if (NULL != dp)
+    {
+        closedir(dp);
     }
 
     return true;
