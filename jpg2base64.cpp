@@ -1,5 +1,6 @@
 #include "jpg2base64.h"
 #include <stdio.h>
+#include "app_log.h"
 
 Jpg2Base64::Jpg2Base64()
 {
@@ -16,6 +17,7 @@ void Jpg2Base64::Convert(char *jpgname, char*out_base64, int &out_len)
     FILE *fjpg = fopen(jpgname, "rb");
     if (NULL == fjpg)
     {
+        srs_error("open jpg failed, fjpg=%s", jpgname);
         return;
     }
 
@@ -23,6 +25,7 @@ void Jpg2Base64::Convert(char *jpgname, char*out_base64, int &out_len)
     char *jpgbuff = new char [JPGBUFF_SIZE];
     if (NULL == jpgbuff)
     {
+        srs_error("new jpg buff failed.");
         return;
     }
 

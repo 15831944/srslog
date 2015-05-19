@@ -139,23 +139,32 @@ void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
                      const_cast<char *>(screenshotdata.time_offset.c_str()));
     }
 
-
-    usleep(1000 * 200);
-
-    if (jpgfile.str().length() <= 0)
+    int timeout = 0;
+    while (timeout++ < 8)
     {
-        srs_error("shot pic to disk failed.");
-        return;
+        int ret = is_file_exist(jpgfile.str().c_str());
+        if (ret >= 0)
+        {
+            srs_trace("got the jpg=%s", jpgfile.str().c_str());
+            break;
+        }
+        st_sleep(1);
     }
 
     //jpg to base64
     Jpg2Base64 jb;
     char *buff_base64 = new char[1024 * 1024];
+    if (NULL == buff_base64)
+    {
+        srs_error("new buff_base64 failed.");
+        return;
+    }
+
     int base64_len = 0;
     jb.Convert(const_cast<char *>(jpgfile.str().c_str()), buff_base64, base64_len);
     if (base64_len <= 0)
     {
-        srs_error("convert to base64 failed.");
+        srs_error("convert to base64 failed.jpgfile=%s", jpgfile.str().c_str());
     }
 
     //make send package
@@ -172,7 +181,11 @@ void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
     int jpg_rm_res = remove(jpgfile.str().c_str());
     if (jpg_rm_res < 0)
     {
-        srs_error("remove jpg failed, err=%d", errno);
+        srs_error("remove jpg failed, jpgfile=%s, err=%d", jpgfile.str().c_str(), errno);
+    }
+    else
+    {
+        srs_trace("remove jpg success, jpg=%s", jpgfile.str().c_str());
     }
 
     if (NULL != buff_base64)
@@ -260,13 +273,17 @@ bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
 {
     std::vector<std::string> res;
     bool ret = ListDirectoryFile("/var/hls/live", res);
-    if (!ret || res.size() <= 0) {
+    if (!ret || res.size() <= 0)
+    {
+        srs_error("ListDirectoryFile failed.");
         return false;
     }       
 
     std::vector<std::string> res_tsfiles;
-    for (int i = 0; i < res.size(); ++i) {
-        if (NULL != strstr(res.at(i).c_str(), stream)) {
+    for (int i = 0; i < res.size(); ++i)
+    {
+        if (NULL != strstr(res.at(i).c_str(), stream))
+        {
             res_tsfiles.push_back(res.at(i));
         }
     }
