@@ -8,3 +8,10 @@ cmake_install.cmake
 srslog
 srslog.cbp
 objs/srs.pid
+Known Hosts/
+bins/
+debug/
+objs/
+release/
+upload/
+
