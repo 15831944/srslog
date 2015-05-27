@@ -1,4 +1,4 @@
-#include "app_screen_shot_server.h"
+#include "app_proxy_server.h"
 #include "app_macros.h"
 
 SrsScreenShotProtocal::SrsScreenShotProtocal(ISrsProtocolReaderWriter *io)
@@ -42,33 +42,33 @@ int64_t SrsScreenShotProtocal::get_send_bytes()
 }
 
 
-SrsScreenShotServer::SrsScreenShotServer(ISrsProtocolReaderWriter *skt)
+SrsProxyServer::SrsProxyServer(ISrsProtocolReaderWriter *skt)
 {
     io = skt;
     protocol = new SrsScreenShotProtocal(skt);
 }
 
-SrsScreenShotServer::~SrsScreenShotServer()
+SrsProxyServer::~SrsProxyServer()
 {
     srs_freep(protocol);
 }
 
-void SrsScreenShotServer::set_recv_timeout(int64_t timeout_us)
+void SrsProxyServer::set_recv_timeout(int64_t timeout_us)
 {
     return protocol->set_recv_timeout(timeout_us);
 }
 
-int64_t SrsScreenShotServer::get_recv_timeout()
+int64_t SrsProxyServer::get_recv_timeout()
 {
     return protocol->get_recv_timeout();
 }
 
-void SrsScreenShotServer::set_send_timeout(int64_t timeout_us)
+void SrsProxyServer::set_send_timeout(int64_t timeout_us)
 {
     return protocol->set_send_timeout(timeout_us);
 }
 
-int64_t SrsScreenShotServer::get_send_timeout()
+int64_t SrsProxyServer::get_send_timeout()
 {
     return protocol->get_send_timeout();
 }

@@ -31,14 +31,14 @@ public:
     virtual int64_t get_send_bytes();
 };
 
-class SrsScreenShotServer
+class SrsProxyServer
 {
 private:
     ISrsProtocolReaderWriter* io;
     SrsScreenShotProtocal *protocol;
 public:
-    SrsScreenShotServer(ISrsProtocolReaderWriter *skt);
-    virtual ~SrsScreenShotServer();
+    SrsProxyServer(ISrsProtocolReaderWriter *skt);
+    virtual ~SrsProxyServer();
 public:
     /**
     * set/get the recv timeout in us.

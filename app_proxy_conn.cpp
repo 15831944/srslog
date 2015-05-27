@@ -1,4 +1,4 @@
-#include "app_screenshot_conn.h"
+#include "app_proxy_conn.h"
 #include "app_config.h"
 #include "app_log.h"
 #include "app_error_code.h"
@@ -15,17 +15,17 @@
 #include <time.h>
 
 
-SrsScreenShotConn::SrsScreenShotConn(SrsServer *srs_server, st_netfd_t client_stfd)
+SrsProxyConn::SrsProxyConn(SrsServer *srs_server, st_netfd_t client_stfd)
     : SrsConnection(srs_server, client_stfd)
 
 {
     type_ = SrsConnUnknown;
     skt = new SrsStSocket(client_stfd);
-    screenshot = new SrsScreenShotServer(skt);
+    screenshot = new SrsProxyServer(skt);
     _srs_config->subscribe(this);
 }
 
-SrsScreenShotConn::~SrsScreenShotConn()
+SrsProxyConn::~SrsProxyConn()
 {
     type_ = SrsConnUnknown;
 
@@ -34,22 +34,22 @@ SrsScreenShotConn::~SrsScreenShotConn()
     srs_freep(screenshot);
 }
 
-void SrsScreenShotConn::kbps_resample()
+void SrsProxyConn::kbps_resample()
 {
 
 }
 
-int64_t SrsScreenShotConn::get_send_bytes_delta()
-{
-    return 0;
-}
-
-int64_t SrsScreenShotConn::get_recv_bytes_delta()
+int64_t SrsProxyConn::get_send_bytes_delta()
 {
     return 0;
 }
 
-int SrsScreenShotConn::do_cycle()
+int64_t SrsProxyConn::get_recv_bytes_delta()
+{
+    return 0;
+}
+
+int SrsProxyConn::do_cycle()
 {
     int ret = ERROR_SUCCESS;
 
@@ -103,7 +103,7 @@ int SrsScreenShotConn::do_cycle()
     return ret;
 }
 
-void SrsScreenShotConn::parse_client_data(char *json_data, int len, ClientReqData &clientdata)
+void SrsProxyConn::parse_client_data(char *json_data, int len, ClientReqData &clientdata)
 {
     if (!parse_json(json_data, len, clientdata)) {
         srs_error("do_screen_shot_job:parse json failed.");
@@ -111,7 +111,7 @@ void SrsScreenShotConn::parse_client_data(char *json_data, int len, ClientReqDat
     }
 }
 
-void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
+void SrsProxyConn::do_screen_shot_job(const ClientReqData &screenshotdata)
 {
     std::stringstream jpgfile;
     jpgfile << "/var/hls/" << screenshotdata.app << "/" <<screenshotdata.stream << ".jpg";
@@ -195,7 +195,7 @@ void SrsScreenShotConn::do_screen_shot_job(const ClientReqData &screenshotdata)
     }
 }
 
-void SrsScreenShotConn::do_check_vod_file_status(ClientReqData &clientdata)
+void SrsProxyConn::do_check_vod_file_status(ClientReqData &clientdata)
 {
     std::stringstream videofile;
     videofile << "/var/hls/vod/" << clientdata.stream;//vod file name.
@@ -220,7 +220,7 @@ void SrsScreenShotConn::do_check_vod_file_status(ClientReqData &clientdata)
     }
 }
 
-bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
+bool SrsProxyConn::parse_json(char *json_data, int len, ClientReqData &res)
 {
     const nx_json* js = nx_json_parse_utf8(json_data);
     if (NULL == js){
@@ -269,7 +269,7 @@ bool SrsScreenShotConn::parse_json(char *json_data, int len, ClientReqData &res)
     return true;
 }
 
-bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
+bool SrsProxyConn::get_tsfile(const char *stream, std::string &file_name)
 {
     std::vector<std::string> res;
     bool ret = ListDirectoryFile("/var/hls/live", res);
@@ -321,7 +321,7 @@ bool SrsScreenShotConn::get_tsfile(const char *stream, std::string &file_name)
     return true;
 }
 
-bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name, char *time_offset)
+bool SrsProxyConn::shot_picture(char *video_name, char *jpg_name, char *time_offset)
 {
     Execv_ffmpeg ff;
     ff.SetCmd("./ffmpeg/ffmpeg");
@@ -333,7 +333,7 @@ bool SrsScreenShotConn::shot_picture(char *video_name, char *jpg_name, char *tim
     return true;
 }
 
-void SrsScreenShotConn::make_screen_shot_pack(const ClientReqData &screenshotdata, char *buff_base64, int len_base64, std::stringstream &res)
+void SrsProxyConn::make_screen_shot_pack(const ClientReqData &screenshotdata, char *buff_base64, int len_base64, std::stringstream &res)
 {
     std::stringstream datas;
 
@@ -353,7 +353,7 @@ void SrsScreenShotConn::make_screen_shot_pack(const ClientReqData &screenshotdat
            ;
 }
 
-void SrsScreenShotConn::make_file_status_pack(const ClientReqData &clientdata, std::stringstream &res)
+void SrsProxyConn::make_file_status_pack(const ClientReqData &clientdata, std::stringstream &res)
 {
     std::stringstream datas;
 

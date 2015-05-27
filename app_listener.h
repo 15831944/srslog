@@ -11,7 +11,7 @@ enum SrsListenerType
     // HTTP stream, HDS/HLS/DASH
     SrsListenerHttpStream   = 2,
     // Screen Shot service.
-    SrsListenerScreenShot,
+    SrsListenerProxy,
 };
 
 #define SERVER_LISTEN_BACKLOG 512

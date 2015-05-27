@@ -7,7 +7,7 @@
 #include "stdlib.h"
 #include <algorithm>
 #include "app_macros.h"
-#include "app_screenshot_conn.h"
+#include "app_proxy_conn.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -538,10 +538,10 @@ int SrsServer::listen_screen_shot()
     std::vector<std::string> ports = _srs_config->get_listen();
     srs_assert((int) ports.size() > 0);
 
-    close_listeners(SrsListenerScreenShot);
+    close_listeners(SrsListenerProxy);
 
     for (int i = 0; i < (int) ports.size(); i++) {
-        SrsListener *listener = new SrsListener(this, SrsListenerScreenShot);
+        SrsListener *listener = new SrsListener(this, SrsListenerProxy);
         listeners.push_back(listener);
 
         int port = ::atoi(ports[i].c_str());
@@ -639,8 +639,8 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         srs_close_stfd(client_stfd);
         return ret;
 #endif
-    } else if (type == SrsListenerScreenShot) {
-        conn = new SrsScreenShotConn(this, client_stfd);
+    } else if (type == SrsListenerProxy) {
+        conn = new SrsProxyConn(this, client_stfd);
     }
     else {
         // TODO: FIXME: handler others
