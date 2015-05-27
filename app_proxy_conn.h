@@ -27,7 +27,7 @@ typedef struct ClientReqData
 class SrsProxyConn : public virtual SrsConnection, public virtual ISrsReloadHandler
 {
 private:
-    SrsProxyServer *screenshot;
+    SrsProxyServer *proxy;
 public:
     SrsProxyConn(SrsServer* srs_server, st_netfd_t client_stfd);
     virtual ~SrsProxyConn();
@@ -42,18 +42,4 @@ protected:
 private:
     SrsStSocket* skt;
 
-private:
-    void parse_client_data(char *json_data, int len, ClientReqData &screenshotdata);
-    void do_screen_shot_job(const ClientReqData &screenshotdata);
-    void do_check_vod_file_status(ClientReqData &screenshotdata);
-    bool parse_json(char *json_data, int len, ClientReqData &res);
-    bool get_tsfile(const char *stream, std::string &file_name);
-    bool shot_picture(char *ts_name, char *jpg_name, char *time_offset);
-    void make_screen_shot_pack(const ClientReqData &data, char *buff_base64, int len_base64, std::stringstream &res);
-    void make_file_status_pack(const ClientReqData &data, std::stringstream &res);
-
 };
-
-bool ListDirectoryFile( char *path, std::vector<std::string>& vec_files);
-int is_file_exist(const char *file_path);
-int get_file_size_time (const char *filename, int &filesize, int &last_modify);

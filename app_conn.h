@@ -17,6 +17,7 @@ enum SrsConnType
     SrsConnHttpApi,
     SrsConnInquiry,
     SrsConnAccount,
+
 };
 
 /**

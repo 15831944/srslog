@@ -265,7 +265,7 @@ int SrsServer::listen()
 //        return ret;
 //    }
 
-    if ((ret = listen_screen_shot()) != ERROR_SUCCESS) {
+    if ((ret = listen_proxy()) != ERROR_SUCCESS) {
         return ret;
     }
 
@@ -530,7 +530,7 @@ int SrsServer::listen_http_stream()
     return ret;
 }
 
-int SrsServer::listen_screen_shot()
+int SrsServer::listen_proxy()
 {
     int ret = ERROR_SUCCESS;
 
