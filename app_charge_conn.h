@@ -40,6 +40,8 @@ public:
 protected:
     virtual int do_cycle();
 private:
+    bool handle_json_data(std::string data);
+private:
     SrsStSocket* skt;
 
 };

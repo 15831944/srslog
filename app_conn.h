@@ -17,7 +17,8 @@ enum SrsConnType
     SrsConnHttpApi,
     SrsConnInquiry,
     SrsConnAccount,
-
+    StreamMediaConn,
+    CloudStore,
 };
 
 /**
