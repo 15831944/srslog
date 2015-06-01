@@ -1,7 +1,7 @@
 #pragma once
 #include "app_protocol_reader_writer.h"
 
-class SrsScreenShotProtocal
+class SrsChargeProtocal
 {
 private:
     /**
@@ -9,8 +9,8 @@ private:
     */
     ISrsProtocolReaderWriter* skt;
 public:
-    SrsScreenShotProtocal(ISrsProtocolReaderWriter *io);
-    virtual ~SrsScreenShotProtocal();
+    SrsChargeProtocal(ISrsProtocolReaderWriter *io);
+    virtual ~SrsChargeProtocal();
 public:
     /**
     * set/get the recv timeout in us.
@@ -31,14 +31,14 @@ public:
     virtual int64_t get_send_bytes();
 };
 
-class SrsProxyServer
+class SrsChargeServer
 {
 private:
     ISrsProtocolReaderWriter* io;
-    SrsScreenShotProtocal *protocol;
+    SrsChargeProtocal *protocol;
 public:
-    SrsProxyServer(ISrsProtocolReaderWriter *skt);
-    virtual ~SrsProxyServer();
+    SrsChargeServer(ISrsProtocolReaderWriter *skt);
+    virtual ~SrsChargeServer();
 public:
     /**
     * set/get the recv timeout in us.

@@ -3,7 +3,7 @@
 #include "app_conn.h"
 #include "app_reload_handler.h"
 #include "app_st_socket.h"
-#include "app_proxy_server.h"
+#include "app_charge_server.h"
 #include <stdint.h>
 #include <vector>
 
@@ -24,13 +24,13 @@ typedef struct ClientReqData
 // if timeout, close the connection.
 #define SRS_CONSTS_ACCOUNT_RECV_TIMEOUT_US (int64_t)(30*1000*1000LL)
 
-class SrsProxyConn : public virtual SrsConnection, public virtual ISrsReloadHandler
+class SrsChargeConn : public virtual SrsConnection, public virtual ISrsReloadHandler
 {
 private:
-    SrsProxyServer *proxy;
+    SrsChargeServer *proxy;
 public:
-    SrsProxyConn(SrsServer* srs_server, st_netfd_t client_stfd);
-    virtual ~SrsProxyConn();
+    SrsChargeConn(SrsServer* srs_server, st_netfd_t client_stfd);
+    virtual ~SrsChargeConn();
 public:
     virtual void kbps_resample();
     // interface IKbpsDelta

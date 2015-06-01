@@ -7,7 +7,7 @@
 #include "stdlib.h"
 #include <algorithm>
 #include "app_macros.h"
-#include "app_proxy_conn.h"
+#include "app_charge_conn.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -640,7 +640,7 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         return ret;
 #endif
     } else if (type == SrsListenerProxy) {
-        conn = new SrsProxyConn(this, client_stfd);
+        conn = new SrsChargeConn(this, client_stfd);
     }
     else {
         // TODO: FIXME: handler others

@@ -1,4 +1,4 @@
-#include "app_proxy_conn.h"
+#include "app_charge_conn.h"
 #include "app_config.h"
 #include "app_log.h"
 #include "app_error_code.h"
@@ -15,17 +15,17 @@
 #include <time.h>
 
 
-SrsProxyConn::SrsProxyConn(SrsServer *srs_server, st_netfd_t client_stfd)
+SrsChargeConn::SrsChargeConn(SrsServer *srs_server, st_netfd_t client_stfd)
     : SrsConnection(srs_server, client_stfd)
 
 {
     type_ = SrsConnUnknown;
     skt = new SrsStSocket(client_stfd);
-    proxy = new SrsProxyServer(skt);
+    proxy = new SrsChargeServer(skt);
     _srs_config->subscribe(this);
 }
 
-SrsProxyConn::~SrsProxyConn()
+SrsChargeConn::~SrsChargeConn()
 {
     type_ = SrsConnUnknown;
 
@@ -34,22 +34,22 @@ SrsProxyConn::~SrsProxyConn()
     srs_freep(proxy);
 }
 
-void SrsProxyConn::kbps_resample()
+void SrsChargeConn::kbps_resample()
 {
 
 }
 
-int64_t SrsProxyConn::get_send_bytes_delta()
-{
-    return 0;
-}
-
-int64_t SrsProxyConn::get_recv_bytes_delta()
+int64_t SrsChargeConn::get_send_bytes_delta()
 {
     return 0;
 }
 
-int SrsProxyConn::do_cycle()
+int64_t SrsChargeConn::get_recv_bytes_delta()
+{
+    return 0;
+}
+
+int SrsChargeConn::do_cycle()
 {
     int ret = ERROR_SUCCESS;
 
@@ -63,7 +63,7 @@ int SrsProxyConn::do_cycle()
     proxy->set_send_timeout(SRS_CONSTS_ACCOUNT_SEND_TIMEOUT_US);
 
     //begin recv data and handle them.
-    enum {HEAD_BUFFER_LEN = 64};
+    enum {HEAD_BUFFER_LEN = 512};
     char head_buffer[HEAD_BUFFER_LEN] = {'\0'};
 
     //recv head and type.
@@ -73,6 +73,7 @@ int SrsProxyConn::do_cycle()
         return ret;
     }
 
+    srs_trace("recv client[%s]", head_buffer);
 
     return ret;
 }
