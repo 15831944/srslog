@@ -124,6 +124,14 @@ int run_master()
         return ret;
     }
 
+    if ((ret = _srs_server->connecdb_redis()) != ERROR_SUCCESS) {
+        return ret;
+    }
+
+    if ((ret = _srs_server->cache_mysql_to_redis()) != ERROR_SUCCESS) {
+        return ret;
+    }
+
     if ((ret = _srs_server->cycle()) != ERROR_SUCCESS) {
         return ret;
     }

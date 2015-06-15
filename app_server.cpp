@@ -8,6 +8,8 @@
 #include <algorithm>
 #include "app_macros.h"
 #include "app_charge_conn.h"
+#include "redis_process.h"
+#include "mysql_cache.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -20,6 +22,7 @@ SrsServer::SrsServer()
     signal_manager = NULL;
     kbps = NULL;
 
+    sql_cache_ = NULL;
     // donot new object in constructor,
     // for some global instance is not ready now,
     // new these objects in initialize instead.
@@ -51,6 +54,9 @@ void SrsServer::destroy()
     close_listeners(SrsListenerRtmpStream);
     close_listeners(SrsListenerHttpApi);
     close_listeners(SrsListenerHttpStream);
+
+    sql_cache_->stop();
+    srs_freep(sql_cache_);
 
 #ifdef SRS_AUTO_INGEST
     ingester->stop();
@@ -107,6 +113,10 @@ int SrsServer::initialize()
     srs_assert(!kbps);
     kbps = new SrsKbps();
     kbps->set_io(NULL, NULL);
+
+    if (NULL == sql_cache_) {
+        sql_cache_ = new MysqlCache();
+    }
 
 #ifdef SRS_AUTO_HTTP_API
     srs_assert(!http_api_handler);
@@ -289,6 +299,42 @@ int SrsServer::ingest()
     }
 #endif
 
+    return ret;
+}
+
+int SrsServer::connecdb_redis()
+{
+    int ret = ERROR_SUCCESS;
+
+    //connect redis
+    RedisProcess *ob = RedisProcess::get_instance();
+    if (NULL == ob)
+    {
+        srs_error("get RedisProcess instance failed.");
+        return -1;
+    }
+
+    std::string redis_ip = _srs_config->get_redis_ip();
+    int redis_port = _srs_config->get_redis_port();
+    ob->set_redis(redis_ip, redis_port);
+
+    if (!ob->connect())
+    {
+        srs_error("connect db failed");
+        return -1;
+    }
+
+    return ret;
+}
+
+int SrsServer::cache_mysql_to_redis()
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = sql_cache_->start()) != ERROR_SUCCESS) {
+        srs_error("start statistical flow failed. ret=%d", ret);
+        return ret;
+    }
     return ret;
 }
 
@@ -546,7 +592,7 @@ int SrsServer::listen_proxy()
 
         int port = ::atoi(ports[i].c_str());
         if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
-            srs_error("screen shot listen at port %d failed. ret=%d", port, ret);
+            srs_error("charge listen at port %d failed. ret=%d", port, ret);
             return ret;
         }
     }

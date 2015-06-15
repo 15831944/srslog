@@ -1413,7 +1413,9 @@ int SrsConfig::check_config()
             && n != "srs_log_tank" && n != "srs_log_level" && n != "srs_log_file"
             && n != "max_connections" && n != "daemon" && n != "heartbeat"
             && n != "http_api" && n != "http_stream" && n != "stats" && n != "vhost"
-            && n != "pithy_print")
+            && n != "pithy_print" && n != "redis_ip" && n != "redis_port"
+            && n != "mysql_ip" && n != "mysql_port" && n!= "balance_warn"
+            && n != "mysql_usr" && n != "mysql_passwd")
         {
             ret = ERROR_SYSTEM_CONFIG_INVALID;
             srs_error("unsupported directive %s, ret=%d", n.c_str(), ret);
@@ -1895,6 +1897,86 @@ string SrsConfig::get_pid_file()
 
     if (!conf) {
         return SRS_CONF_DEFAULT_PID_FILE;
+    }
+
+    return conf->arg0();
+}
+
+string SrsConfig::get_redis_ip()
+{
+    SrsConfDirective* conf = root->get("redis_ip");
+
+    if (!conf) {
+        return "127.0.0.1";
+    }
+
+    return conf->arg0();
+}
+
+int SrsConfig::get_redis_port()
+{
+    srs_assert(root);
+
+    SrsConfDirective* conf = root->get("redis_port");
+    if (!conf || conf->arg0().empty()) {
+        return 6379;
+    }
+
+    return ::atoi(conf->arg0().c_str());
+}
+
+int SrsConfig::get_balance_warn()
+{
+    srs_assert(root);
+
+    SrsConfDirective* conf = root->get("balance_warn");
+    if (!conf || conf->arg0().empty()) {
+        return 5;
+    }
+
+    return ::atoi(conf->arg0().c_str());
+}
+
+string SrsConfig::get_mysql_ip()
+{
+    SrsConfDirective* conf = root->get("mysql_ip");
+
+    if (!conf) {
+        return "127.0.0.1";
+    }
+
+    return conf->arg0();
+}
+
+int SrsConfig::get_mysql_port()
+{
+    srs_assert(root);
+
+    SrsConfDirective* conf = root->get("redis_port");
+    if (!conf || conf->arg0().empty()) {
+        return 3306;
+    }
+
+    return ::atoi(conf->arg0().c_str());
+}
+
+string SrsConfig::get_mysql_usr()
+{
+    SrsConfDirective* conf = root->get("mysql_usr");
+
+    if (!conf) {
+        return "root";
+    }
+
+    return conf->arg0();
+}
+
+string SrsConfig::get_mysql_passwd()
+{
+    SrsConfDirective* conf = root->get("mysql_passwd");
+
+    if (!conf) {
+        return "123456";
     }
 
     return conf->arg0();

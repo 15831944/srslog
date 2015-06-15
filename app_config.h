@@ -377,6 +377,14 @@ public:
     *       user can use different pid file for each process.
     */
     virtual std::string         get_pid_file();
+
+    virtual std::string get_redis_ip();
+    virtual int get_redis_port();
+    virtual int get_balance_warn();
+    virtual std::string get_mysql_ip();
+    virtual int get_mysql_port();
+    virtual std::string get_mysql_usr();
+    virtual std::string get_mysql_passwd();
 // pithy print
 private:
     virtual SrsConfDirective*   get_pithy_print();

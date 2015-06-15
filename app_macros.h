@@ -37,8 +37,8 @@
 ///////////////////////////////////////////////////////////
 // default consts values
 ///////////////////////////////////////////////////////////
-#define SRS_CONF_DEFAULT_PID_FILE "./objs/screenshot.pid"
-#define SRS_CONF_DEFAULT_LOG_FILE "./objs/screenshot.log"
+#define SRS_CONF_DEFAULT_PID_FILE "./objs/charge.pid"
+#define SRS_CONF_DEFAULT_LOG_FILE "./objs/charge.log"
 #define SRS_CONF_DEFAULT_LOG_LEVEL "trace"
 #define SRS_CONF_DEFAULT_LOG_TANK_CONSOLE "console"
 #define SRS_CONF_DEFAULT_COFNIG_FILE "conf/srs.conf"
