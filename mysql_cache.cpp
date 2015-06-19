@@ -63,11 +63,11 @@ int MysqlCache::cycle()
 
     srs_trace("begin cache mysql data to redis.");
     cache_TB_tb_usr_charge_left_2_redis();
+    cache_TB_user_device_channel_vas_2_redis();
 
     while (true) {
-        cache_TB_user_device_channel_vas_2_redis();
 
-        st_sleep(UPDATE_TIME_INTERVAL);
+        st_sleep(CACHE_DATABASE_TIME_INTERVAL);
     }
 
     return ret;

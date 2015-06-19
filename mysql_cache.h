@@ -28,7 +28,7 @@ private:
 private:
     SrsThread* pthread;
 
-    enum {UPDATE_TIME_INTERVAL = 60};
+    enum {CACHE_DATABASE_TIME_INTERVAL = 60};
 };
 
 #endif // SRSSTATISTICALFLOW_H
