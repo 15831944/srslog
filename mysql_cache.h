@@ -6,6 +6,8 @@
 #include "mysql_process.h"
 #include "redis_dbnum.h"
 
+#if 0
+
 /**
  * @brief statistic the flow.
  */
@@ -30,5 +32,7 @@ private:
 
     enum {CACHE_DATABASE_TIME_INTERVAL = 60};
 };
+
+#endif
 
 #endif // SRSSTATISTICALFLOW_H

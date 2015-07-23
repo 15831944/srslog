@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <vector>
 
+#if 0
+
 MySqlProcess* MySqlProcess::ob_ = NULL;
 
 MySqlProcess::MySqlProcess() : dbip_("127.0.0.1"), dbport_(3306)
@@ -367,3 +369,4 @@ bool MySqlProcess::update_tb_usr_charge_left(const char *db, std::string usr, do
     }
 }
 
+#endif

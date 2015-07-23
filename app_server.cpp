@@ -22,7 +22,7 @@ SrsServer::SrsServer()
     signal_manager = NULL;
     kbps = NULL;
 
-    sql_cache_ = NULL;
+//    sql_cache_ = NULL;
     // donot new object in constructor,
     // for some global instance is not ready now,
     // new these objects in initialize instead.
@@ -55,8 +55,8 @@ void SrsServer::destroy()
     close_listeners(SrsListenerHttpApi);
     close_listeners(SrsListenerHttpStream);
 
-    sql_cache_->stop();
-    srs_freep(sql_cache_);
+//    sql_cache_->stop();
+//    srs_freep(sql_cache_);
 
 #ifdef SRS_AUTO_INGEST
     ingester->stop();
@@ -114,9 +114,9 @@ int SrsServer::initialize()
     kbps = new SrsKbps();
     kbps->set_io(NULL, NULL);
 
-    if (NULL == sql_cache_) {
-        sql_cache_ = new MysqlCache();
-    }
+//    if (NULL == sql_cache_) {
+//        sql_cache_ = new MysqlCache();
+//    }
 
 #ifdef SRS_AUTO_HTTP_API
     srs_assert(!http_api_handler);
@@ -331,10 +331,10 @@ int SrsServer::cache_mysql_to_redis()
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = sql_cache_->start()) != ERROR_SUCCESS) {
-        srs_error("start statistical flow failed. ret=%d", ret);
-        return ret;
-    }
+//    if ((ret = sql_cache_->start()) != ERROR_SUCCESS) {
+//        srs_error("start statistical flow failed. ret=%d", ret);
+//        return ret;
+//    }
     return ret;
 }
 

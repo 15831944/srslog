@@ -235,10 +235,10 @@ void SrsChargeConn::handle_flow_data(const std::vector<T_ClientFlowData> &res)
         return;
     }
 
-    MySqlProcess *sql = MySqlProcess::get_instance();
-    if (NULL == sql) {
-        return;
-    }
+//    MySqlProcess *sql = MySqlProcess::get_instance();
+//    if (NULL == sql) {
+//        return;
+//    }
 
     double price = 0;
     for (int i = 0; i < res.size(); ++i)
@@ -294,9 +294,9 @@ void SrsChargeConn::handle_flow_data(const std::vector<T_ClientFlowData> &res)
                     tb.device_guid = outdata.devguid_;
                     tb.channel_no = (outdata.channel_);
                     {
-                        sql->lock_db();
-                        sql->update_tb_user_device_vas("DeviceSys", tb);
-                        sql->unlock_db();
+//                        sql->lock_db();
+//                        sql->update_tb_user_device_vas("DeviceSys", tb);
+//                        sql->unlock_db();
                     }
                     continue;
                 }
@@ -308,12 +308,12 @@ void SrsChargeConn::handle_flow_data(const std::vector<T_ClientFlowData> &res)
 
             //update mysql database when used more than 0.1
             if (money >= 0.1) {
-                sql->lock_db();
-                std::string moneyleft_str;
-                sql->select_tb_usr_charge_left_single("DeviceSys", outdata.usr_name_, moneyleft_str);
-                double moneynew = atof(moneyleft_str.c_str()) - 0.1;
-                sql->update_tb_usr_charge_left("DeviceSys", outdata.usr_name_, moneynew);
-                sql->unlock_db();
+//                sql->lock_db();
+//                std::string moneyleft_str;
+//                sql->select_tb_usr_charge_left_single("DeviceSys", outdata.usr_name_, moneyleft_str);
+//                double moneynew = atof(moneyleft_str.c_str()) - 0.1;
+//                sql->update_tb_usr_charge_left("DeviceSys", outdata.usr_name_, moneynew);
+//                sql->unlock_db();
             }
 
         } else if (JOSTREAMMEDIA_FLOWDATA_LINKMODE_PUSH == res[i].mode) {
@@ -349,9 +349,9 @@ void SrsChargeConn::handle_flow_data(const std::vector<T_ClientFlowData> &res)
                         tb.device_guid = outdata.devguid_;
                         tb.channel_no = (outdata.channel_);
                         {
-                            sql->lock_db();
-                            sql->update_tb_user_device_vas("DeviceSys", tb);
-                            sql->unlock_db();
+//                            sql->lock_db();
+//                            sql->update_tb_user_device_vas("DeviceSys", tb);
+//                            sql->unlock_db();
                         }
                     }
 
@@ -362,12 +362,12 @@ void SrsChargeConn::handle_flow_data(const std::vector<T_ClientFlowData> &res)
 
                 //update mysql database when used more than 0.1
                 if (money >= 0.1) {
-                    sql->lock_db();
-                    std::string moneyleft_str;
-                    sql->select_tb_usr_charge_left_single("DeviceSys", users[i], moneyleft_str);
-                    double moneynew = atof(moneyleft_str.c_str()) - 0.1;
-                    sql->update_tb_usr_charge_left("DeviceSys", users[i], moneynew);
-                    sql->unlock_db();
+//                    sql->lock_db();
+//                    std::string moneyleft_str;
+//                    sql->select_tb_usr_charge_left_single("DeviceSys", users[i], moneyleft_str);
+//                    double moneynew = atof(moneyleft_str.c_str()) - 0.1;
+//                    sql->update_tb_usr_charge_left("DeviceSys", users[i], moneynew);
+//                    sql->unlock_db();
                 }
 
             }
@@ -413,15 +413,15 @@ void SrsChargeConn::handle_topup_data(const T_ClientTopUpData &data)
 {
     std::stringstream res;
     ssize_t nsize = 0;
-    MySqlProcess* sql = MySqlProcess::get_instance();
+//    MySqlProcess* sql = MySqlProcess::get_instance();
     std::string moneyleft_str;
     double moneynew = 0.00;
     std::string usr_name;
 
-    if (NULL == sql) {
-        srs_error("handle_topup_data, NULL==sql.");
-        goto chargefailed;
-    }
+//    if (NULL == sql) {
+//        srs_error("handle_topup_data, NULL==sql.");
+//        goto chargefailed;
+//    }
 
     get_usr_name_redis(usr_name, data.sessionid_);
     if (usr_name.length() <= 0)
@@ -437,26 +437,26 @@ void SrsChargeConn::handle_topup_data(const T_ClientTopUpData &data)
         goto chargefailed;
     }
 
-    {
-        sql->lock_db();
+//    {
+//        sql->lock_db();
 
-        sql->select_tb_usr_charge_left_single("DeviceSys", usr_name, moneyleft_str);
-        if (moneyleft_str.length() <= 0) {//means there is no this user in mysql, should insert into.
-            sql->insert_tb_usr_charge("DeviceSys", usr_name, data.money);
-            update_money_redis(usr_name, atof(data.money.c_str()));
-        } else {
-            //update mysql
-            moneynew = atof(moneyleft_str.c_str()) + atof(data.money.c_str());
-            sql->update_tb_usr_charge_left("DeviceSys", usr_name, moneynew);
-            //update redis
-            update_money_redis(usr_name, moneynew);
-        }
+//        sql->select_tb_usr_charge_left_single("DeviceSys", usr_name, moneyleft_str);
+//        if (moneyleft_str.length() <= 0) {//means there is no this user in mysql, should insert into.
+//            sql->insert_tb_usr_charge("DeviceSys", usr_name, data.money);
+//            update_money_redis(usr_name, atof(data.money.c_str()));
+//        } else {
+//            //update mysql
+//            moneynew = atof(moneyleft_str.c_str()) + atof(data.money.c_str());
+//            sql->update_tb_usr_charge_left("DeviceSys", usr_name, moneynew);
+//            //update redis
+//            update_money_redis(usr_name, moneynew);
+//        }
 
-        //insert tb_usr_charge_history
-        sql->insert_tb_usr_charge_history("DeviceSys", usr_name, data.money);
+//        //insert tb_usr_charge_history
+//        sql->insert_tb_usr_charge_history("DeviceSys", usr_name, data.money);
 
-        sql->unlock_db();
-    }
+//        sql->unlock_db();
+//    }
 
     make_json_back(res, CHARGE_ERROR_SUCCESS, "topup success.");
     skt->write((char *)res.str().c_str(), res.str().length(), &nsize);

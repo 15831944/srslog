@@ -17,6 +17,8 @@
 
 extern SrsServer *_srs_server;
 
+#if 0
+
 MysqlCache::MysqlCache()
 {
     _srs_config->subscribe(this);
@@ -151,3 +153,5 @@ void MysqlCache::cache_TB_user_device_channel_vas_2_redis()
         nosql->set(DB_SETS_USRDEVCHANNEL_USERS, cmd_sets.str().c_str());
     }
 }
+
+#endif

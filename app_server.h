@@ -57,7 +57,7 @@ private:
     bool signal_reload;
     bool signal_gmc_stop;
 
-    MysqlCache *sql_cache_;
+//    MysqlCache *sql_cache_;
 public:
     SrsServer();
     virtual ~SrsServer();

@@ -59,6 +59,8 @@ private:
     sem_t mu_;
 };
 
+#if 0
+
 class MySqlProcess
 {
 public:
@@ -90,5 +92,7 @@ private:
     std::string passwd_;
     MutexLock lock_;
 };
+
+#endif
 
 extern void get_local_system_time(std::stringstream &stringstream);
