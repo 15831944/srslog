@@ -12,6 +12,8 @@ enum SrsListenerType
     SrsListenerHttpStream   = 2,
     // Screen Shot service.
     SrsListenerProxy,
+
+    SrsListenData,
 };
 
 #define SERVER_LISTEN_BACKLOG 512

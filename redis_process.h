@@ -11,6 +11,8 @@
 #include <vector>
 #include "app_log.h"
 #include "redis_dbnum.h"
+#include "mutexlock.h"
+#include "checkcharge.h"
 
 class RedisProcess
 {
@@ -24,8 +26,20 @@ public:
     bool select_db(e_RedisDBNum dbnum);
     bool set(e_RedisDBNum , const char *);
     bool get(std::string &, e_RedisDBNum ,  const char *);
+    bool get(int&, e_RedisDBNum ,  const char *);
     bool get_smembers(std::vector<std::string> &vec, e_RedisDBNum, const char*);
+    bool get_all_keys(std::vector<std::string>&);
+    bool get_single_userinfo(std::string user, T_UserDataInfo &data);
 
+    //multi
+    bool start_multi();
+    bool multi_quene_cmd(const std::string &cmd);
+    bool exe_multi();
+
+    bool query_usage(e_RedisDBNum dbnum, const std::string &cmd,
+                     std::map<std::string, std::string> &res);
+
+    static MutexLock mu_;
 private:
     RedisProcess();
     bool close_connect();

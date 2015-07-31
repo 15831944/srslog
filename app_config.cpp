@@ -1415,7 +1415,7 @@ int SrsConfig::check_config()
             && n != "http_api" && n != "http_stream" && n != "stats" && n != "vhost"
             && n != "pithy_print" && n != "redis_ip" && n != "redis_port"
             && n != "mysql_ip" && n != "mysql_port" && n!= "balance_warn"
-            && n != "mysql_usr" && n != "mysql_passwd")
+            && n != "mysql_usr" && n != "mysql_passwd" && n != "datalisten")
         {
             ret = ERROR_SYSTEM_CONFIG_INVALID;
             srs_error("unsupported directive %s, ret=%d", n.c_str(), ret);
@@ -1856,6 +1856,22 @@ bool SrsConfig::get_deamon()
     }
 
     return true;
+}
+
+vector<string> SrsConfig::get_datalisten()
+{
+    std::vector<string> ports;
+
+    SrsConfDirective* conf = root->get("datalisten");
+    if (!conf) {
+        return ports;
+    }
+
+    for (int i = 0; i < (int)conf->args.size(); i++) {
+        ports.push_back(conf->args.at(i));
+    }
+
+    return ports;
 }
 
 SrsConfDirective* SrsConfig::get_root()

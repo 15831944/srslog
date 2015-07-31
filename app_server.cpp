@@ -10,6 +10,7 @@
 #include "app_charge_conn.h"
 #include "redis_process.h"
 #include "mysql_cache.h"
+#include "app_origindataconn.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -22,6 +23,7 @@ SrsServer::SrsServer()
     signal_manager = NULL;
     kbps = NULL;
 
+    check_ = NULL;
 //    sql_cache_ = NULL;
     // donot new object in constructor,
     // for some global instance is not ready now,
@@ -54,6 +56,9 @@ void SrsServer::destroy()
     close_listeners(SrsListenerRtmpStream);
     close_listeners(SrsListenerHttpApi);
     close_listeners(SrsListenerHttpStream);
+
+    check_->stop();
+    srs_freep(check_);
 
 //    sql_cache_->stop();
 //    srs_freep(sql_cache_);
@@ -117,6 +122,10 @@ int SrsServer::initialize()
 //    if (NULL == sql_cache_) {
 //        sql_cache_ = new MysqlCache();
 //    }
+
+    if (NULL == check_) {
+        check_ = new CheckCharge();
+    }
 
 #ifdef SRS_AUTO_HTTP_API
     srs_assert(!http_api_handler);
@@ -279,6 +288,10 @@ int SrsServer::listen()
         return ret;
     }
 
+    if ((ret = listen_datalisten()) != ERROR_SUCCESS) {
+        return ret;
+    }
+
     return ret;
 }
 
@@ -335,6 +348,16 @@ int SrsServer::cache_mysql_to_redis()
 //        srs_error("start statistical flow failed. ret=%d", ret);
 //        return ret;
 //    }
+    return ret;
+}
+
+int SrsServer::check_charge()
+{
+    int ret = ERROR_SUCCESS;
+    if ((ret = check_->start()) != ERROR_SUCCESS) {
+        srs_error("start check charge failed. ret=%d", ret);
+        return ret;
+    }
     return ret;
 }
 
@@ -600,6 +623,30 @@ int SrsServer::listen_proxy()
     return ret;
 }
 
+int SrsServer::listen_datalisten()
+{
+    int ret = ERROR_SUCCESS;
+
+    // stream service port.
+    std::vector<std::string> ports = _srs_config->get_datalisten();
+    srs_assert((int) ports.size() > 0);
+
+    close_listeners(SrsListenData);
+
+    for (int i = 0; i < (int) ports.size(); i++) {
+        SrsListener *listener = new SrsListener(this, SrsListenData);
+        listeners.push_back(listener);
+
+        int port = ::atoi(ports[i].c_str());
+        if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
+            srs_error("charge listen at port %d failed. ret=%d", port, ret);
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
 void SrsServer::close_listeners(SrsListenerType type)
 {
     std::vector<SrsListener*>::iterator it;
@@ -687,6 +734,8 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
 #endif
     } else if (type == SrsListenerProxy) {
         conn = new SrsChargeConn(this, client_stfd);
+    } else if (type == SrsListenData) {
+        conn = new SrsOriginDataConn(this, client_stfd);
     }
     else {
         // TODO: FIXME: handler others

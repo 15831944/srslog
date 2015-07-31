@@ -353,6 +353,8 @@ public:
     * grand-child process to init process.
     */
     virtual bool                get_deamon();
+
+    virtual std::vector<std::string>          get_datalisten();
     /**
     * get the max connections limit of system.
     * if exceed the max connection, SRS will disconnect the connection.

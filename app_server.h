@@ -7,6 +7,7 @@
 #include "app_kbps.h"
 #include "app_signal_manager.h"
 #include "mysql_cache.h"
+#include "checkcharge.h"
 
 /**
 * SRS RTMP server, initialize and listen,
@@ -58,6 +59,7 @@ private:
     bool signal_gmc_stop;
 
 //    MysqlCache *sql_cache_;
+    CheckCharge *check_;
 public:
     SrsServer();
     virtual ~SrsServer();
@@ -79,6 +81,7 @@ public:
     virtual int ingest();
     virtual int connecdb_redis();
     virtual int cache_mysql_to_redis();
+    virtual int check_charge();
     virtual int cycle();
 // server utility
 public:
@@ -113,6 +116,8 @@ private:
     virtual int listen_http_api();
     virtual int listen_http_stream();
     virtual int listen_proxy();
+    virtual int listen_datalisten();
+
     /**
     * close the listeners for specified type,
     * remove the listen object from manager.

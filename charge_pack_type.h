@@ -8,13 +8,47 @@
 #define JSON_LIVE_STR "live"
 #define JSON_STREAM_STR "stream"
 #define JSON_MODE_STR "mode"
-#define JSON_FLOW_STR "flow"
 #define JSON_USRDATA_STR "usrdata"
 #define JSON_USR_NAME_STR "usr_name"
 #define JSON_SESSION_STR "session"
 #define JSON_MONEY_STR "money"
 #define JSON_ERROR_STR "error"
 #define JSON_MSG_STR "msg"
+
+#define JS_CHARGE_TYPE "type"
+#define JS_CHARGE_USER "user"
+#define JS_CHARGE_MONEY "money"
+#define JS_CHARGE_SESSIONID "sessionid"
+#define JS_CHARGE_RET   "ret"
+#define JS_CHARGE_OPENDATE "open_date"
+#define JS_CHARGE_MONEY  "money"
+#define JS_CHARGE_FLOW "flow"
+#define JS_CHARGE_OPENDATE "opendate"
+#define JS_CHARGE_FLOWTOTAL  "flowtotal"
+#define JS_CHARGE_NFLOWUSED  "nflowused"
+#define JS_CHARGE_NMONEYUSED "nmoneyused"
+#define JS_CHARGE__PACKUSED "pack_used"
+#define JS_CHARGE__ALARMIP "alarm_ip"
+#define JS_CHARGE_ALARMPORT "alarm_port"
+
+#define __SRS_TYPE_CHARGE 1000
+#define __SRS_TYPE_BUY_PACK 1001
+#define __SRS_TYPE_ALARM_INFO 1002
+#define __SRS_TYPE_QUERY_INFO 1003
+#define __SRS_TYPE_MONEYWARN 1004
+
+#define TOBESTRING(STR) #STR
+
+enum JCC_ERROR_CODE {
+    JCC_SUCCESS = 0,
+    JCC_CHARGE_FAILED = 1,//充值失败
+    JCC_BUY_PACKAGE_FAILED = 2, //购买套餐失败
+    JCC_QUERY_USEAGE_FAILED = 3,//查询使用情况失败
+    JCC_SET_ALARM_FAILED = 4,//设置报警信息失败
+    JCC_CONNECT_SERVER_ERROR = 5,//和服务器通信错误
+    JCC_NOT_SET_SERVER = 6,//没有设置服务器信息
+    JCC_ERROR,//
+};
 
 //各服务器和计费服务器之间包类型
 typedef enum JOPACKTYPE

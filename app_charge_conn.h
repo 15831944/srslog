@@ -8,15 +8,14 @@
 #include "charge_pack_type.h"
 #include <stdint.h>
 #include <vector>
-#include "mysql_process.h"
 #include "redis_process.h"
 #include <map>
-#include "generate_token.h"
+#include <string>
 
-typedef enum CHARGE_TYPE
-{
-    TYPE_FLOW_SHARE = 1,
-}e_CHARGE_TYPE;
+//typedef enum CHARGE_TYPE
+//{
+//    TYPE_FLOW_SHARE = 1,
+//}e_CHARGE_TYPE;
 
 typedef struct ClientFlowData
 {
@@ -52,7 +51,6 @@ typedef struct ClientTopUpData
 // if timeout, close the connection.
 #define SRS_CONSTS_ACCOUNT_RECV_TIMEOUT_US (int64_t)(30*1000*1000LL)
 
-
 class SrsChargeConn : public virtual SrsConnection, public virtual ISrsReloadHandler
 {
 private:
@@ -69,6 +67,27 @@ public:
 protected:
     virtual int do_cycle();
 private:
+    //package handle
+    void handle_client_data(std::string data, std::string &res);
+    void handle_json(std::string jsondata, std::string &res);
+
+    //type classify
+    void handle_charge(const nx_json *js, std::string &res);
+    void handle_buy_pack(const nx_json *js, std::string &res);
+    void handle_alarminfo(const nx_json *js, std::string &res);
+    void handle_queryinfo(const nx_json *js, std::string &res);
+
+    //redis process
+    bool redis_charge(const std::string &user, const std::string &money);
+    bool redis_buy_pack(const std::string &user, const std::string &money, const std::string &flow);
+    bool redis_query_usage(const std::string &user, std::string &res);
+
+    //utility
+    void get_system_date(std::string &res);
+private:
+    std::string sessionid_;
+
+private:
     bool handle_json_data(const std::string &data);
     void get_flow_info(std::vector<T_ClientFlowData> &res, const nx_json *js_);
     void handle_flow_data(const std::vector<T_ClientFlowData> &res);
@@ -77,7 +96,7 @@ private:
     void handle_topup_data(const T_ClientTopUpData &);
     void get_usr_name_redis(std::string &, const std::string &);
     void update_money_redis(const std::string &, const uint32_t &);
-    void get_usr_info_token(t_out_AntiStrealLinkTokenData &,const std::string &token);
+//    void get_usr_info_token(t_out_AntiStrealLinkTokenData &,const std::string &token);
     void get_flow_redis_old(double &flow, RedisProcess* nosql, const std::string &usrname);
     void set_flow_redis_new(double flow, RedisProcess* nosql, const std::string &usrname);
     void add_using_money_in_memory(double &money, const std::string &usrname, const double &used_money);

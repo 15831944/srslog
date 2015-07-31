@@ -1,0 +1,4 @@
+listen              54161;
+max_connections     1000;
+daemon              on;
+srs_log_tank        file;
