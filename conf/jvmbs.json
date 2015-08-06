@@ -2,6 +2,8 @@
     "listen": "17644",
     "max_connections": "1000",
     "daemon": "off",
-    "srs_log_tank": "file",
-    "srs_log_level": "trace"
+    "log_tank": "file",
+    "log_level": "trace",
+    "log_file":"jvmbs.log",
+    "pid_file":"jvmbs.pid"
 }
