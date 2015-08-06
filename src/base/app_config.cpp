@@ -1276,7 +1276,6 @@ int SrsConfig::parse_options(int argc, char** argv)
         if (get_log_tank_file()) {
             srs_trace("write log to file %s", log_filename.c_str());
             srs_trace("you can: tailf %s", log_filename.c_str());
-            srs_trace("@see: %s", SRS_WIKI_URL_LOG);
         } else {
             srs_trace("write log to console");
         }
@@ -1765,7 +1764,6 @@ int SrsConfig::check_config()
         if (get_log_tank_file()) {
             srs_trace("write log to file %s", log_filename.c_str());
             srs_trace("you can: tailf %s", log_filename.c_str());
-            srs_trace("@see: %s", SRS_WIKI_URL_LOG);
         } else {
             srs_trace("write log to console");
         }

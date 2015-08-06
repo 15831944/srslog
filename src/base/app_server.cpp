@@ -51,26 +51,6 @@ void SrsServer::destroy()
     close_listeners(SrsListenerHttpApi);
     close_listeners(SrsListenerHttpStream);
 
-#ifdef SRS_AUTO_INGEST
-    ingester->stop();
-#endif
-
-#ifdef SRS_AUTO_HTTP_API
-    srs_freep(http_api_handler);
-#endif
-
-#ifdef SRS_AUTO_HTTP_SERVER
-    srs_freep(http_stream_handler);
-#endif
-
-#ifdef SRS_AUTO_HTTP_PARSER
-    srs_freep(http_heartbeat);
-#endif
-
-#ifdef SRS_AUTO_INGEST
-    srs_freep(ingester);
-#endif
-
     if (pid_fd > 0) {
         ::close(pid_fd);
         pid_fd = -1;
@@ -106,35 +86,6 @@ int SrsServer::initialize()
     srs_assert(!kbps);
     kbps = new SrsKbps();
     kbps->set_io(NULL, NULL);
-
-#ifdef SRS_AUTO_HTTP_API
-    srs_assert(!http_api_handler);
-    http_api_handler = SrsHttpHandler::create_http_api();
-#endif
-#ifdef SRS_AUTO_HTTP_SERVER
-    srs_assert(!http_stream_handler);
-    http_stream_handler = SrsHttpHandler::create_http_stream();
-#endif
-#ifdef SRS_AUTO_HTTP_PARSER
-    srs_assert(!http_heartbeat);
-    http_heartbeat = new SrsHttpHeartbeat();
-#endif
-#ifdef SRS_AUTO_INGEST
-    srs_assert(!ingester);
-    ingester = new SrsIngester();
-#endif
-
-#ifdef SRS_AUTO_HTTP_API
-    if ((ret = http_api_handler->initialize()) != ERROR_SUCCESS) {
-        return ret;
-    }
-#endif
-
-#ifdef SRS_AUTO_HTTP_SERVER
-    if ((ret = http_stream_handler->initialize()) != ERROR_SUCCESS) {
-        return ret;
-    }
-#endif
 
     return ret;
 }

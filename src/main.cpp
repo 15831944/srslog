@@ -13,8 +13,6 @@ int main(int argc, char *argv[])
 {
     int ret = ERROR_SUCCESS;
 
-    // never use srs log(srs_trace, srs_error, etc) before config parse the option,
-    // which will load the log config and apply it.
     if ((ret = _srs_config->parse_options(argc, argv)) != ERROR_SUCCESS) {
         return ret;
     }
@@ -23,27 +21,10 @@ int main(int argc, char *argv[])
         return ret;
     }
 
-    // we check the config when the log initialized.
     if ((ret = _srs_config->check_config()) != ERROR_SUCCESS) {
         return ret;
-    }
+    } 
 
-    srs_trace("srs"RTMP_SIG_SRS_VERSION);
-    srs_trace("license: "RTMP_SIG_SRS_LICENSE);
-    srs_trace("primary: "RTMP_SIG_SRS_PRIMARY);
-    srs_trace("authors: "RTMP_SIG_SRS_AUTHROS);
-    srs_trace("uname: "SRS_AUTO_UNAME);
-    srs_trace("build: %s, %s", SRS_AUTO_BUILD_DATE, srs_is_little_endian()? "little-endian":"big-endian");
-    srs_trace("configure: "SRS_AUTO_USER_CONFIGURE);
-    srs_trace("features: "SRS_AUTO_CONFIGURE);
-    srs_trace("conf: %s, limit: %d", _srs_config->config().c_str(), _srs_config->get_max_connections());
-
-
-    /**
-    * we do nothing in the constructor of server,
-    * and use initialize to create members, set hooks for instance the reload handler,
-    * all initialize will done in this stage.
-    */
     if ((ret = _srs_server->initialize()) != ERROR_SUCCESS) {
         return ret;
     }
@@ -53,7 +34,6 @@ int main(int argc, char *argv[])
 
 int run()
 {
-    // if not deamon, directly run master.
     if (!_srs_config->get_deamon()) {
         return run_master();
     }
@@ -124,6 +104,7 @@ int run_master()
         return ret;
     }
 
+    //fix.  add the connect type you want to create.
 //    if ((ret = _srs_server->calculate_flow()) != ERROR_SUCCESS) {
 //        return ret;
 //    }

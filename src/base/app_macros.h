@@ -8,7 +8,6 @@
 // server info.
 #define RTMP_SIG_SRS_KEY "SRS"
 #define RTMP_SIG_SRS_CODE "HuKaiqun"
-#define RTMP_SIG_SRS_ROLE "origin/edge server"
 #define RTMP_SIG_SRS_NAME RTMP_SIG_SRS_KEY"(Simple RTMP Server)"
 #define RTMP_SIG_SRS_URL_SHORT "github.com/winlinvip/simple-rtmp-server"
 #define RTMP_SIG_SRS_URL "https://"RTMP_SIG_SRS_URL_SHORT
@@ -25,9 +24,6 @@
 #define RTMP_SIG_SRS_VERSION __SRS_XSTR(VERSION_MAJOR)"."__SRS_XSTR(VERSION_MINOR)"."__SRS_XSTR(VERSION_REVISION)
 #define RTMP_SIG_SRS_SERVER RTMP_SIG_SRS_KEY"/"RTMP_SIG_SRS_VERSION"("RTMP_SIG_SRS_CODE")"
 
-#define SRS_WIKI_URL_LOG "https://github.com/winlinvip/simple-rtmp-server/wiki/v1_CN_SrsLog"
-
-#define SRS_AUTO_BUILD_TS "1430490206"
 #define SRS_AUTO_BUILD_DATE "2015-05-01 22:23:26"
 #define SRS_AUTO_UNAME "Linux yangkai 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux"
 #define SRS_AUTO_USER_CONFIGURE "--x86-x64 "
@@ -37,8 +33,8 @@
 ///////////////////////////////////////////////////////////
 // default consts values
 ///////////////////////////////////////////////////////////
-#define SRS_CONF_DEFAULT_PID_FILE "./objs/srs.pid"
-#define SRS_CONF_DEFAULT_LOG_FILE "./objs/srs.log"
+#define SRS_CONF_DEFAULT_PID_FILE "app.pid"
+#define SRS_CONF_DEFAULT_LOG_FILE "app.log"
 #define SRS_CONF_DEFAULT_LOG_LEVEL "trace"
 #define SRS_CONF_DEFAULT_LOG_TANK_CONSOLE "console"
 #define SRS_CONF_DEFAULT_COFNIG_FILE "conf/srs.conf"
