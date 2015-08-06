@@ -1,12 +1,13 @@
 #include "app_server.h"
 #include "app_log.h"
-#include "app_config.h"
 #include "app_utility.h"
 #include "fcntl.h"
 #include "app_st.h"
 #include "stdlib.h"
 #include <algorithm>
 #include "app_macros.h"
+#include "../conf/config_info.h"
+#include "../conns/base/app_base_conn.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -18,22 +19,6 @@ SrsServer::SrsServer()
 
     signal_manager = NULL;
     kbps = NULL;
-
-    // donot new object in constructor,
-    // for some global instance is not ready now,
-    // new these objects in initialize instead.
-#ifdef SRS_AUTO_HTTP_API
-    http_api_handler = NULL;
-#endif
-#ifdef SRS_AUTO_HTTP_SERVER
-    http_stream_handler = NULL;
-#endif
-#ifdef SRS_AUTO_HTTP_PARSER
-    http_heartbeat = NULL;
-#endif
-#ifdef SRS_AUTO_INGEST
-    ingester = NULL;
-#endif
 }
 
 SrsServer::~SrsServer()
@@ -45,11 +30,8 @@ void SrsServer::destroy()
 {
     srs_warn("start destroy server");
 
-    _srs_config->unsubscribe(this);
-
     close_listeners(SrsListenerRtmpStream);
-    close_listeners(SrsListenerHttpApi);
-    close_listeners(SrsListenerHttpStream);
+    close_listeners(SrsListenerBase);
 
     if (pid_fd > 0) {
         ::close(pid_fd);
@@ -77,9 +59,6 @@ int SrsServer::initialize()
     // for the main objects(server, config, log, context),
     // never subscribe handler in constructor,
     // instead, subscribe handler in initialize method.
-    srs_assert(_srs_config);
-    _srs_config->subscribe(this);
-
     srs_assert(!signal_manager);
     signal_manager = new SrsSignalManager(this);
 
@@ -99,7 +78,7 @@ int SrsServer::acquire_pid_file()
 {
     int ret = ERROR_SUCCESS;
 
-    std::string pid_file = _srs_config->get_pid_file();
+    std::string pid_file = g_config->get_pid_file();
 
     // -rw-r--r--
     // 644
@@ -184,7 +163,7 @@ int SrsServer::initialize_st()
     // @remark, st alloc segment use mmap, which only support 32757 threads,
     // if need to support more, for instance, 100k threads, define the macro MALLOC_STACK.
     // TODO: FIXME: maybe can use "sysctl vm.max_map_count" to refine.
-    if (_srs_config->get_max_connections() > 32756) {
+    if (g_config->get_max_connections() > 32756) {
         ret = ERROR_ST_EXCEED_THREADS;
         srs_error("st mmap for stack allocation must <= %d threads, "
             "@see Makefile of st for MALLOC_STACK, please build st manually by "
@@ -203,15 +182,7 @@ int SrsServer::listen()
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = listen_rtmp()) != ERROR_SUCCESS) {
-        return ret;
-    }
-
-    if ((ret = listen_http_api()) != ERROR_SUCCESS) {
-        return ret;
-    }
-
-    if ((ret = listen_http_stream()) != ERROR_SUCCESS) {
+    if ((ret = listen_base()) != ERROR_SUCCESS) {
         return ret;
     }
 
@@ -227,13 +198,6 @@ int SrsServer::register_signal()
 int SrsServer::ingest()
 {
     int ret = ERROR_SUCCESS;
-
-#ifdef SRS_AUTO_INGEST
-    if ((ret = ingester->start()) != ERROR_SUCCESS) {
-        srs_error("start ingest streams failed. ret=%d", ret);
-        return ret;
-    }
-#endif
 
     return ret;
 }
@@ -326,7 +290,7 @@ int SrsServer::do_cycle()
     // the deamon thread, update the time cache
     while (true) {
         // the interval in config.
-        int heartbeat_max_resolution = (int)(_srs_config->get_heartbeat_interval() / SRS_SYS_CYCLE_INTERVAL);
+        int heartbeat_max_resolution = (int)(g_config->get_heartbeat_interval() / SRS_SYS_CYCLE_INTERVAL);
 
         // dynamic fetch the max.
         int __max = max;
@@ -350,12 +314,6 @@ int SrsServer::do_cycle()
             if (signal_reload) {
                 signal_reload = false;
                 srs_info("get signal reload, to reload the config.");
-
-                if ((ret = _srs_config->reload()) != ERROR_SUCCESS) {
-                    srs_error("reload config failed. ret=%d", ret);
-                    return ret;
-                }
-                srs_trace("reload config success.");
             }
 
             // update the cache time or rusage.
@@ -364,45 +322,6 @@ int SrsServer::do_cycle()
                 srs_update_system_time_ms();
             }
 
-#ifdef SRS_AUTO_STAT
-            if ((i % SRS_SYS_RUSAGE_RESOLUTION_TIMES) == 0) {
-                srs_info("update resource info, rss.");
-                srs_update_system_rusage();
-            }
-            if ((i % SRS_SYS_CPU_STAT_RESOLUTION_TIMES) == 0) {
-                srs_info("update cpu info, cpu usage.");
-                srs_update_proc_stat();
-            }
-            if ((i % SRS_SYS_DISK_STAT_RESOLUTION_TIMES) == 0) {
-                srs_info("update disk info, disk iops.");
-                srs_update_disk_stat();
-            }
-            if ((i % SRS_SYS_MEMINFO_RESOLUTION_TIMES) == 0) {
-                srs_info("update memory info, usage/free.");
-                srs_update_meminfo();
-            }
-            if ((i % SRS_SYS_PLATFORM_INFO_RESOLUTION_TIMES) == 0) {
-                srs_info("update platform info, uptime/load.");
-                srs_update_platform_info();
-            }
-            if ((i % SRS_SYS_NETWORK_DEVICE_RESOLUTION_TIMES) == 0) {
-                srs_info("update network devices info.");
-                srs_update_network_devices();
-            }
-            if ((i % SRS_SYS_NETWORK_RTMP_SERVER_RESOLUTION_TIMES) == 0) {
-                srs_info("update network rtmp server info.");
-                resample_kbps(NULL);
-                srs_update_rtmp_server((int)conns.size(), kbps);
-            }
-    #ifdef SRS_AUTO_HTTP_PARSER
-            if (_srs_config->get_heartbeat_enabled()) {
-                if ((i % heartbeat_max_resolution) == 0) {
-                    srs_info("do http heartbeat, for internal server to report.");
-                    http_heartbeat->heartbeat();
-                }
-            }
-    #endif
-#endif
             srs_info("server main thread loop");
         }
     }
@@ -410,70 +329,28 @@ int SrsServer::do_cycle()
     return ret;
 }
 
-int SrsServer::listen_rtmp()
-{
-    int ret = ERROR_SUCCESS;
+int SrsServer::listen_base()
+{    int ret = ERROR_SUCCESS;
 
-    // stream service port.
-    std::vector<std::string> ports = _srs_config->get_listen();
-    srs_assert((int)ports.size() > 0);
+     // stream service port.
+     std::vector<std::string> ports = g_config->get_listen();
+     srs_assert((int)ports.size() > 0);
 
-    close_listeners(SrsListenerRtmpStream);
+     close_listeners(SrsListenerBase);
 
-    for (int i = 0; i < (int)ports.size(); i++) {
-        SrsListener* listener = new SrsListener(this, SrsListenerRtmpStream);
-        listeners.push_back(listener);
+     for (int i = 0; i < (int)ports.size(); i++) {
+         SrsListener* listener = new SrsListener(this, SrsListenerBase);
+         listeners.push_back(listener);
 
-        int port = ::atoi(ports[i].c_str());
-        if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
-            srs_error("RTMP stream listen at port %d failed. ret=%d", port, ret);
-            return ret;
-        }
-    }
+         int port = ::atoi(ports[i].c_str());
+         if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
+             srs_error("SrsListenerBase listen at port %d failed. ret=%d", port, ret);
+             return ret;
+         }
+     }
 
-    return ret;
-}
+     return ret;
 
-int SrsServer::listen_http_api()
-{
-    int ret = ERROR_SUCCESS;
-
-#ifdef SRS_AUTO_HTTP_API
-    close_listeners(SrsListenerHttpApi);
-    if (_srs_config->get_http_api_enabled()) {
-        SrsListener* listener = new SrsListener(this, SrsListenerHttpApi);
-        listeners.push_back(listener);
-
-        int port = _srs_config->get_http_api_listen();
-        if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
-            srs_error("HTTP api listen at port %d failed. ret=%d", port, ret);
-            return ret;
-        }
-    }
-#endif
-
-    return ret;
-}
-
-int SrsServer::listen_http_stream()
-{
-    int ret = ERROR_SUCCESS;
-
-#ifdef SRS_AUTO_HTTP_SERVER
-    close_listeners(SrsListenerHttpStream);
-    if (_srs_config->get_http_stream_enabled()) {
-        SrsListener* listener = new SrsListener(this, SrsListenerHttpStream);
-        listeners.push_back(listener);
-
-        int port = _srs_config->get_http_stream_listen();
-        if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
-            srs_error("HTTP stream listen at port %d failed. ret=%d", port, ret);
-            return ret;
-        }
-    }
-#endif
-
-    return ret;
 }
 
 void SrsServer::close_listeners(SrsListenerType type)
@@ -523,7 +400,7 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
 {
     int ret = ERROR_SUCCESS;
 
-    int max_connections = _srs_config->get_max_connections();
+    int max_connections = g_config->get_max_connections();
     if ((int)conns.size() >= max_connections) {
         int fd = st_netfd_fileno(client_stfd);
 
@@ -545,28 +422,13 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         srs_close_stfd(client_stfd);
         return ret;
 #endif
-    } else if (type == SrsListenerHttpApi) {
-#ifdef SRS_AUTO_HTTP_API
-        conn = new SrsHttpApi(this, client_stfd, http_api_handler);
-#else
-        srs_warn("close http client for server not support http-api");
-        srs_close_stfd(client_stfd);
-        return ret;
-#endif
-    } else if (type == SrsListenerHttpStream) {
-#ifdef SRS_AUTO_HTTP_SERVER
-        conn = new SrsHttpConn(this, client_stfd, http_stream_handler);
-#else
-        srs_warn("close http client for server not support http-server");
-        srs_close_stfd(client_stfd);
-        return ret;
-#endif
-    } else if (type == SrsListenerScreenShot) {
-
+    } else if (type == SrsListenerBase) {
+        conn = new SrsBaseConn(this, client_stfd);
     }
     else {
         // TODO: FIXME: handler others
     }
+
     srs_assert(conn);
 
     // directly enqueue, the cycle thread will remove the client.
@@ -579,7 +441,6 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         return ret;
     }
     srs_verbose("conn started success.");
-
     srs_verbose("accept client finished. conns=%d, ret=%d", (int)conns.size(), ret);
 
     return ret;

@@ -6,12 +6,8 @@ enum SrsListenerType
 {
     // RTMP client,
     SrsListenerRtmpStream   = 0,
-    // HTTP api,
-    SrsListenerHttpApi      = 1,
-    // HTTP stream, HDS/HLS/DASH
-    SrsListenerHttpStream   = 2,
-    // Screen Shot service.
-    SrsListenerScreenShot,
+    // base.
+    SrsListenerBase,
 };
 
 #define SERVER_LISTEN_BACKLOG 512

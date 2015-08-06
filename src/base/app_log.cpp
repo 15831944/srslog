@@ -1,13 +1,13 @@
 #include "app_log.h"
 using namespace std;
 
-#include "app_config.h"
 #include "app_utility.h"
 #include <stdarg.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "../conf/config_info.h"
 
 ISrsLog::ISrsLog()
 {
@@ -67,21 +67,15 @@ SrsFastLog::~SrsFastLog()
         ::close(fd);
         fd = -1;
     }
-
-    if (_srs_config) {
-        _srs_config->unsubscribe(this);
-    }
 }
 
 int SrsFastLog::initialize()
 {
     int ret = ERROR_SUCCESS;
 
-    if (_srs_config) {
-        _srs_config->subscribe(this);
-
-        log_to_file_tank = _srs_config->get_log_tank_file();
-        _level = srs_get_log_level(_srs_config->get_log_level());
+    if (g_config) {
+        log_to_file_tank = g_config->get_log_tank_file();
+        _level = srs_get_log_level(g_config->get_log_level());
     }
 
     return ret;
@@ -196,12 +190,12 @@ int SrsFastLog::on_reload_log_tank()
 {
     int ret = ERROR_SUCCESS;
 
-    if (!_srs_config) {
+    if (!g_config) {
         return ret;
     }
 
     bool tank = log_to_file_tank;
-    log_to_file_tank = _srs_config->get_log_tank_file();
+    log_to_file_tank = g_config->get_log_tank_file();
 
     if (tank) {
         return ret;
@@ -223,11 +217,11 @@ int SrsFastLog::on_reload_log_level()
 {
     int ret = ERROR_SUCCESS;
 
-    if (!_srs_config) {
+    if (!g_config) {
         return ret;
     }
 
-    _level = srs_get_log_level(_srs_config->get_log_level());
+    _level = srs_get_log_level(g_config->get_log_level());
 
     return ret;
 }
@@ -236,7 +230,7 @@ int SrsFastLog::on_reload_log_file()
 {
     int ret = ERROR_SUCCESS;
 
-    if (!_srs_config) {
+    if (!g_config) {
         return ret;
     }
 
@@ -346,11 +340,11 @@ void SrsFastLog::write_log(int& fd, char *str_log, int size, int level)
 
 void SrsFastLog::open_log_file()
 {
-    if (!_srs_config) {
+    if (!g_config) {
         return;
     }
 
-    std::string filename = _srs_config->get_log_file();
+    std::string filename = g_config->get_log_file_name();
 
     if (filename.empty()) {
         return;

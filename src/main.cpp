@@ -1,10 +1,10 @@
-#include "app_config.h"
 #include "app_log.h"
 #include "app_error_code.h"
 #include "app_utility.h"
 #include "app_server.h"
 #include <sys/wait.h>
 #include <stdlib.h>
+#include "conf/config_info.h"
 
 int run();
 int run_master();
@@ -13,17 +13,22 @@ int main(int argc, char *argv[])
 {
     int ret = ERROR_SUCCESS;
 
-    if ((ret = _srs_config->parse_options(argc, argv)) != ERROR_SUCCESS) {
+    if (argc < 2) {
+        printf("not start, useage: app configfile.");
+        return ret;
+    }
+
+    if ((ret = g_config->load_configfile(argv[1])) != ERROR_SUCCESS) {
+        return ret;
+    }
+
+    if ((ret = g_config->parse_and_check()) != ERROR_SUCCESS) {
         return ret;
     }
 
     if ((ret = _srs_log->initialize()) != ERROR_SUCCESS) {
         return ret;
     }
-
-    if ((ret = _srs_config->check_config()) != ERROR_SUCCESS) {
-        return ret;
-    } 
 
     if ((ret = _srs_server->initialize()) != ERROR_SUCCESS) {
         return ret;
@@ -34,7 +39,7 @@ int main(int argc, char *argv[])
 
 int run()
 {
-    if (!_srs_config->get_deamon()) {
+    if (!g_config->get_daemon()) {
         return run_master();
     }
 
@@ -105,9 +110,6 @@ int run_master()
     }
 
     //fix.  add the connect type you want to create.
-//    if ((ret = _srs_server->calculate_flow()) != ERROR_SUCCESS) {
-//        return ret;
-//    }
 
     if ((ret = _srs_server->cycle()) != ERROR_SUCCESS) {
         return ret;

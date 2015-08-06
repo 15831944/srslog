@@ -7,25 +7,8 @@
 #include "app_kbps.h"
 #include "app_signal_manager.h"
 
-/**
-* SRS RTMP server, initialize and listen,
-* start connection service thread, destroy client.
-*/
 class SrsServer : public ISrsReloadHandler
 {
-private:
-#ifdef SRS_AUTO_HTTP_API
-    SrsHttpHandler* http_api_handler;
-#endif
-#ifdef SRS_AUTO_HTTP_SERVER
-    SrsHttpHandler* http_stream_handler;
-#endif
-#ifdef SRS_AUTO_HTTP_PARSER
-    SrsHttpHeartbeat* http_heartbeat;
-#endif
-#ifdef SRS_AUTO_INGEST
-    SrsIngester* ingester;
-#endif
 private:
     /**
     * the pid file fd, lock the file write when server is running.
@@ -104,9 +87,7 @@ private:
     /**
     * listen at specified protocol.
     */
-    virtual int listen_rtmp();
-    virtual int listen_http_api();
-    virtual int listen_http_stream();
+    virtual int listen_base();
     /**
     * close the listeners for specified type,
     * remove the listen object from manager.

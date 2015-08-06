@@ -70,5 +70,6 @@
 #define ERROR_SYSTEM_FILE_CLOSE             4002
 #define ERROR_SYSTEM_FILE_READ              4003
 #define ERROR_SYSTEM_FILE_EOF               4004
+#define ERROR_POINT_NULL                    5000
 
 bool srs_is_client_gracefully_close(int error_code);
