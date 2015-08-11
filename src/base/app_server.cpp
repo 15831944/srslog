@@ -7,7 +7,8 @@
 #include <algorithm>
 #include "app_macros.h"
 #include "../conf/config_info.h"
-#include "../conns/base/app_base_conn.h"
+#include "../conns/record/app_record_conn.h"
+#include "../conns/redis_process/redis_process.h"
 
 SrsServer* _srs_server = new SrsServer();
 
@@ -166,8 +167,8 @@ int SrsServer::initialize_st()
     if (g_config->get_max_connections() > 32756) {
         ret = ERROR_ST_EXCEED_THREADS;
         srs_error("st mmap for stack allocation must <= %d threads, "
-            "@see Makefile of st for MALLOC_STACK, please build st manually by "
-            "\"make EXTRA_CFLAGS=-DMALLOC_STACK linux-debug\", ret=%d", ret);
+                  "@see Makefile of st for MALLOC_STACK, please build st manually by "
+                  "\"make EXTRA_CFLAGS=-DMALLOC_STACK linux-debug\", ret=%d", ret);
         return ret;
     }
 
@@ -198,6 +199,24 @@ int SrsServer::register_signal()
 int SrsServer::ingest()
 {
     int ret = ERROR_SUCCESS;
+
+    return ret;
+}
+
+int SrsServer::connect_redis()
+{
+    int ret = ERROR_SUCCESS;
+    if (NULL == g_redis) {
+        srs_error("NULL == g_redis.");
+        return ERROR_POINT_NULL;
+    }
+
+    g_redis->set_redis("127.0.0.1", g_config->get_redis_port());
+    if (!g_redis->connect()) {
+        return ERROR_REDIS_CONNECT;
+    }
+
+    srs_trace("connect to redis success, port==%d", g_config->get_redis_port());
 
     return ret;
 }
@@ -299,11 +318,11 @@ int SrsServer::do_cycle()
         for (int i = 0; i < __max; i++) {
             st_usleep(SRS_SYS_CYCLE_INTERVAL * 1000);
 
-// for gperf heap checker,
-// @see: research/gperftools/heap-checker/heap_checker.cc
-// if user interrupt the program, exit to check mem leak.
-// but, if gperf, use reload to ensure main return normally,
-// because directly exit will cause core-dump.
+            // for gperf heap checker,
+            // @see: research/gperftools/heap-checker/heap_checker.cc
+            // if user interrupt the program, exit to check mem leak.
+            // but, if gperf, use reload to ensure main return normally,
+            // because directly exit will cause core-dump.
 #ifdef SRS_AUTO_GPERF_MC
             if (signal_gmc_stop) {
                 srs_warn("gmc got singal to stop server.");
@@ -334,22 +353,22 @@ int SrsServer::listen_base()
 
      // stream service port.
      std::vector<std::string> ports = g_config->get_listen();
-     srs_assert((int)ports.size() > 0);
+      srs_assert((int)ports.size() > 0);
 
-     close_listeners(SrsListenerBase);
+       close_listeners(SrsListenerBase);
 
-     for (int i = 0; i < (int)ports.size(); i++) {
-         SrsListener* listener = new SrsListener(this, SrsListenerBase);
-         listeners.push_back(listener);
+        for (int i = 0; i < (int)ports.size(); i++) {
+            SrsListener* listener = new SrsListener(this, SrsListenerBase);
+            listeners.push_back(listener);
 
-         int port = ::atoi(ports[i].c_str());
-         if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
-             srs_error("SrsListenerBase listen at port %d failed. ret=%d", port, ret);
-             return ret;
-         }
-     }
+            int port = ::atoi(ports[i].c_str());
+            if ((ret = listener->listen(port)) != ERROR_SUCCESS) {
+                srs_error("SrsListenerBase listen at port %d failed. ret=%d", port, ret);
+                return ret;
+            }
+        }
 
-     return ret;
+         return ret;
 
 }
 
@@ -405,7 +424,7 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         int fd = st_netfd_fileno(client_stfd);
 
         srs_error("exceed the max connections, drop client: "
-            "clients=%d, max=%d, fd=%d", (int)conns.size(), max_connections, fd);
+                  "clients=%d, max=%d, fd=%d", (int)conns.size(), max_connections, fd);
 
         srs_close_stfd(client_stfd);
 
@@ -423,7 +442,7 @@ int SrsServer::accept_client(SrsListenerType type, st_netfd_t client_stfd)
         return ret;
 #endif
     } else if (type == SrsListenerBase) {
-        conn = new SrsBaseConn(this, client_stfd);
+        conn = new SrsRecordConn(this, client_stfd);
     }
     else {
         // TODO: FIXME: handler others

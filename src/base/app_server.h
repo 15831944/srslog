@@ -57,6 +57,7 @@ public:
     virtual int listen();
     virtual int register_signal();
     virtual int ingest();
+    virtual int connect_redis();
     virtual int cycle();
 // server utility
 public:

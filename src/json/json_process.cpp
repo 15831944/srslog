@@ -26,3 +26,16 @@ void parse_json_no_array(const char* my_json_string,
      //end parse
      cJSON_Delete(root);
 }
+
+
+void get_value_from_map(const std::map<std::string, std::string> &data_map, const std::string &key, std::string &res)
+{
+    for (std::map<std::string, std::string>::const_iterator iter = data_map.begin();
+         iter != data_map.end();
+         ++iter) {
+        if (iter->first == key) {
+            res = iter->second;
+            break;
+        }
+    }
+}

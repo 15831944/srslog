@@ -13,6 +13,8 @@
 #define CONF_LOG_LEVEL "log_level"
 #define CONF_LOG_FILE "log_file"
 #define CONF_PID_FILE "pid_file"
+#define CONF_REDIS_PORT "redis_port"
+#define CONF_HLS_PATH   "hls_path"
 
 class ConfigInfo
 {
@@ -33,7 +35,8 @@ public:
     int get_max_connections() const;
     int64_t get_heartbeat_interval() const;
     std::vector<std::string> get_listen() const;
-
+    int get_redis_port() const;
+    std::string get_hls_path() const;
 private:
     std::string json;
     std::map<std::string, std::string> json_map;

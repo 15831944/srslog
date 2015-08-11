@@ -44,7 +44,6 @@ int SrsConnection::cycle()
 
     // success.
     if (ret == ERROR_SUCCESS) {
-        srs_trace("client finished.");
     }
 
     // client close peer.

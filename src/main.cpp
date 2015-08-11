@@ -110,6 +110,9 @@ int run_master()
     }
 
     //fix.  add the connect type you want to create.
+    if ((ret = _srs_server->connect_redis()) != ERROR_SUCCESS) {
+        return ret;
+    }
 
     if ((ret = _srs_server->cycle()) != ERROR_SUCCESS) {
         return ret;

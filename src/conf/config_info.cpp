@@ -5,13 +5,17 @@
 #include "app_macros.h"
 #include "../json/json_process.h"
 
-const char* CONST_KEYS[] = { "listen",
-                             "max_connections",
-                             "daemon",
-                             "log_tank",
-                             "log_level",
-                             "log_file",
-                             "pid_file"
+ConfigInfo* g_config = new ConfigInfo();
+
+const char* CONST_KEYS[] = { CONF_LISTEN,
+                             CONF_MAX_CONNECTIONS,
+                             CONF_DAEMON,
+                             CONF_LOG_TANK,
+                             CONF_LOG_LEVEL,
+                             CONF_LOG_FILE,
+                             CONF_PID_FILE,
+                             CONF_REDIS_PORT,
+                             CONF_HLS_PATH
                            };
 
 ConfigInfo::ConfigInfo()
@@ -163,5 +167,18 @@ std::vector<std::string> ConfigInfo::get_listen() const
     return ports;
 }
 
-ConfigInfo* g_config = new ConfigInfo();
+int ConfigInfo::get_redis_port() const
+{
+    std::string res;
+    get_value(CONF_REDIS_PORT, res);
 
+    return atoi(res.c_str());
+}
+
+std::string ConfigInfo::get_hls_path() const
+{
+    std::string res;
+    get_value(CONF_HLS_PATH, res);
+
+    return res;
+}

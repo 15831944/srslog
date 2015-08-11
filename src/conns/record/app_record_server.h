@@ -31,14 +31,14 @@ public:
     virtual int64_t get_send_bytes();
 };
 
-class SrsBaseServer
+class SrsRecordServer
 {
 private:
     ISrsProtocolReaderWriter* io;
     SrsChargeProtocal *protocol;
 public:
-    SrsBaseServer(ISrsProtocolReaderWriter *skt);
-    virtual ~SrsBaseServer();
+    SrsRecordServer(ISrsProtocolReaderWriter *skt);
+    virtual ~SrsRecordServer();
 public:
     /**
     * set/get the recv timeout in us.

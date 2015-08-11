@@ -72,4 +72,6 @@
 #define ERROR_SYSTEM_FILE_EOF               4004
 #define ERROR_POINT_NULL                    5000
 
+#define ERROR_REDIS_CONNECT                 6000
+
 bool srs_is_client_gracefully_close(int error_code);

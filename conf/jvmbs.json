@@ -5,5 +5,7 @@
     "log_tank": "file",
     "log_level": "trace",
     "log_file":"jvmbs.log",
-    "pid_file":"jvmbs.pid"
+    "pid_file":"jvmbs.pid",
+    "redis_port":"15870",
+    "hls_path":"/home/yangkai/hls"
 }
