@@ -83,6 +83,8 @@ int SrsRecordConn::do_cycle()
 
 void SrsRecordConn::handle_client_data(const std::string &data)
 {
+    srs_trace("recv client:%s", data.c_str());
+
     std::vector<std::string> keys;
     keys.push_back(JSON_TYPE);
     keys.push_back(JSON_STREAM);
@@ -133,6 +135,8 @@ void SrsRecordConn::handle_client_data(const std::string &data)
     default:
         break;
     }
+
+    srs_trace("send client:%s", res.c_str());
 }
 
 int SrsRecordConn::handle_start_record(std::string stream, std::string publisher,
