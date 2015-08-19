@@ -22,9 +22,9 @@ bool VideoRecord::init(std::string key, const char *hls_path, const char *tmp_ts
         return false;
     } else {
         key_ = key;
-        hls_path_ = hls_path;
-        tmp_ts_path_ = tmp_ts_path;
-        mp4_path_ = mp4_path;
+        root_hls_ = hls_path;
+        root_tmpts_ = tmp_ts_path;
+        root_mp4_ = mp4_path;
         ffmpeg_cmd_ = ffmpeg_cmd;
 
         has_init_ = true;
@@ -140,7 +140,7 @@ bool VideoRecord::create_ts_folder()
     }
 
     std::stringstream path;
-    path << tmp_ts_path_ << "/" << publisher_ << "/" << stream_name_;
+    path << root_tmpts_ << "/" << key_.c_str();
     ts_full_path_ = path.str();
     if (0 == access(path.str().c_str(), F_OK)) {
         return true;
@@ -166,7 +166,7 @@ bool VideoRecord::create_mp4_folder()
     }
 
     std::stringstream path;
-    path << mp4_path_ << "/" << publisher_;
+    path << root_mp4_ << "/" << publisher_;
     mp4_full_path_ = path.str();
     if (0 == access(path.str().c_str(), F_OK)) {
         return true;
@@ -232,7 +232,7 @@ void VideoRecord::do_copy_job(std::vector<std::string> &last_tsfiles)
 {
     //找到m3u8文件
     std::stringstream m3u8file;
-    m3u8file << hls_path_ << "/live/" << stream_name_ << ".m3u8";
+    m3u8file << root_hls_ << "/live/" << stream_name_ << ".m3u8";
     const char* m3u8file_str = m3u8file.str().c_str();
     if (0 != access(m3u8file_str, F_OK)) {
         return;
@@ -297,7 +297,7 @@ void VideoRecord::do_copy_job(std::vector<std::string> &last_tsfiles)
         std::stringstream ts_dst;
         ts_dst << ts_full_path_ << "/" << ts;
         std::stringstream ts_src;
-        ts_src << hls_path_ << "/live/" << ts;
+        ts_src << root_hls_ << "/live/" << ts;
 
         if (0 == access(ts_dst.str().c_str(), F_OK)) {//ts临时目录中已经有了这个文件,
             //get the time of the two files, if  time interval > 30s, then copy it to tstmp directory.

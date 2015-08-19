@@ -35,17 +35,19 @@ private:
     void get_file_last_modify_time(std::string filename, time_t &modify_time);
 public:
     std::string key_;
-    std::string hls_path_; //hls路径，不包含live
-    std::string tmp_ts_path_;//ts临时文件路径
-    std::string mp4_path_;//生成mp4文件路径
+    std::string root_hls_; //hls路径，不包含live
+    std::string root_tmpts_;//ts临时文件路径
+    std::string root_mp4_;//生成mp4文件路径
 
     std::string stream_name_;//流名
     std::string publisher_;//发布者
     std::string mp4filename_;//录像文件名
     std::string ffmpeg_cmd_;//ffmpeg bin文件。
     bool has_init_;//是否初始化标志
+
     std::string ts_full_path_;//ts文件全路径
     std::string mp4_full_path_;//mp4文件全路径
+
     pthread_t rc_pid_;
 private:
     DISSALLOW_COPY_AND_ASSIGN(VideoRecord);
