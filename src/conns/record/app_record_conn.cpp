@@ -83,7 +83,7 @@ int SrsRecordConn::do_cycle()
 
 void SrsRecordConn::handle_client_data(const std::string &data)
 {
-    srs_trace("recv client:%s", data.c_str());
+    srs_trace("========recv client:%s", data.c_str());
 
     std::vector<std::string> keys;
     keys.push_back(JSON_TYPE);
@@ -136,38 +136,66 @@ void SrsRecordConn::handle_client_data(const std::string &data)
         break;
     }
 
-    srs_trace("send client:%s", res.c_str());
+    srs_trace("========send client:%s", res.c_str());
 }
 
 int SrsRecordConn::handle_start_record(std::string stream, std::string publisher,
                                        std::string file, std::string timeout)
 {
+    if (stream.length() <= 0 || publisher.length() <= 0 || file.length() <= 0) {
+        srs_error("handle_start_record: input param illigal.");
+        return RET_INPUTPARAMS_ERROR;
+    }
+
+    if (timeout.length() <= 0) {
+        timeout = "172800"; //2 days.
+    }
+
     int ret = RET_CODE_SUCCESS;
 
+    std::string key;
+    int npos = file.find(".mp4");
+    if (npos == std::string::npos) {
+        return RET_FILE_FORMAT_NOT_MP4;
+    }
+    key = file.substr(0, npos);
+
     //asd if recording
-    std::stringstream ss_key;
-    ss_key << publisher << ":" << stream;
-    if (ask_if_recording(ss_key.str())){
+    if (ask_if_recording(key)){
+        srs_trace("client ask start record, has recording now, key=%s", key.c_str());
         return RET_CODE_SUCCESS;
     }
 
     //insert redis, and start new record.
-    if (!insert_record_redis(stream, publisher, file, timeout)) {
+    if (!insert_record_redis(key, stream, publisher, timeout)) {
         return RET_CODE_INSERT_REDIS_FAILED;
     }
 
     //start record.
-    ret = do_start_record(stream, publisher, file);
+    ret = do_start_record(key, stream, publisher, file);
 
     return ret;
 }
 
 int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher, std::string file)
 {
+    if (stream.length() <=0 || publisher.length() <= 0 || file.length() <= 0) {
+        srs_error("handle_stop_record: input params error.");
+        return RET_INPUTPARAMS_ERROR;
+    }
+
+    std::string key;
+    int npos = file.find(".mp4");
+    if (npos == std::string::npos) {
+        srs_error("handle_stop_record: file format error.");
+        return RET_FILE_FORMAT_NOT_MP4;
+    }
+    key = file.substr(0, npos);
+
     //del from redis data.
     {
         std::stringstream cmd;
-        cmd << "DEL " << publisher << ":" << stream;
+        cmd << "DEL " << key.c_str();
 
         g_mu_redis.Lock();
         g_redis->delete_record_key(DB_REDIS_RECORDINFO, cmd.str().c_str());
@@ -175,10 +203,7 @@ int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher,
     }
 
     //do delete and stop job.
-    std::stringstream key;
-    key << publisher << ":" << stream;
-
-    srs_trace("handle stop record, key=%s, map size=%d", key.str().c_str(), g_map_vr.size());
+    srs_trace("handle stop record, recv key=%s", key.c_str());
 
     //get point of vr.
     VideoRecord* vr = NULL;
@@ -187,7 +212,7 @@ int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher,
         for (std::map<std::string, VideoRecord*>::iterator iter = g_map_vr.begin();
              iter != g_map_vr.end();
              ++iter) {
-            if (iter->first == key.str()) {
+            if (iter->first == key) {
                 vr = iter->second;
                 g_map_vr.erase(iter);
                 break;
@@ -197,11 +222,13 @@ int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher,
     }
 
     if (NULL == vr) {
-        srs_error("do_stop_rec, NULL == vr, may be has stoped.");
+        srs_error("do_stop_rec, NULL == vr, may be has stoped, recv key=%s.", key.c_str());
         return RET_CODE_SUCCESS;
     }
 
     vr->stop_record();
+    srs_trace("after stop, in VideoRecord, vr->key==%s, recved key=%s",
+              vr->key_.c_str(), key.c_str());
 
     if (NULL != vr) {
         delete vr;
@@ -251,16 +278,17 @@ bool SrsRecordConn::ask_if_recording(const std::string &key)
     return (1 == res);
 }
 
-bool SrsRecordConn::insert_record_redis(std::string stream, std::string publisher,
-                                        std::string file, std::string timeout)
+bool SrsRecordConn::insert_record_redis(std::string key,
+                                        std::string stream,
+                                        std::string publisher,
+                                        std::string timeout)
 {
-    std::stringstream key;
-    key << publisher << ":" << stream;
-
-    std::stringstream cmd_set;
-    cmd_set << "set " << key.str().c_str() << " " << file;
+    std::stringstream set_stream;
+    set_stream << "hset " << key.c_str() << " stream " << stream;
+    std::stringstream set_publisher;
+    set_publisher << "hset " << key.c_str() << " publisher " << publisher;
     std::stringstream expire_cmd;
-    expire_cmd << "EXPIRE " << key.str().c_str() << " " << timeout.c_str();
+    expire_cmd << "EXPIRE " << key.c_str() << " " << timeout.c_str();
 
     if (NULL == g_redis) {
         srs_error("NULL == g_redis, insert_record_redis");
@@ -272,7 +300,8 @@ bool SrsRecordConn::insert_record_redis(std::string stream, std::string publishe
 
         g_redis->select_db(DB_REDIS_RECORDINFO);
         g_redis->start_multi();
-        g_redis->multi_quene_cmd(cmd_set.str().c_str());
+        g_redis->multi_quene_cmd(set_stream.str().c_str());
+        g_redis->multi_quene_cmd(set_publisher.str().c_str());
         g_redis->multi_quene_cmd(expire_cmd.str().c_str());
         g_redis->exe_multi();
 
@@ -282,7 +311,7 @@ bool SrsRecordConn::insert_record_redis(std::string stream, std::string publishe
     return true;
 }
 
-int SrsRecordConn::do_start_record(std::string stream, std::string publisher, std::string file)
+int SrsRecordConn::do_start_record(std::string key, std::string stream, std::string publisher, std::string file)
 {
     int ret = RET_CODE_SUCCESS;
 
@@ -298,7 +327,7 @@ int SrsRecordConn::do_start_record(std::string stream, std::string publisher, st
     std::stringstream mp4_path;
     mp4_path << g_config->get_hls_path().c_str() << "/mp4";
 
-    if ( !vr->init(hls_path.str().c_str(),
+    if ( !vr->init(key, hls_path.str().c_str(),
                    tmp_ts_path.str().c_str(),
                    mp4_path.str().c_str(),
                    "./ffmpeg") )
@@ -310,18 +339,12 @@ int SrsRecordConn::do_start_record(std::string stream, std::string publisher, st
         return RET_CODE_INIT_RECORD_FAILED;
     }
 
-    //insert map.
-    std::stringstream ss_key;
-    ss_key << publisher << ":" << stream;
-
     {
         g_records_mu.Lock();
-        g_map_vr.insert(std::make_pair(ss_key.str(), vr));
+        g_map_vr.insert(std::make_pair(key, vr));
         g_records_mu.UnLock();
     }
-
-    srs_trace("do_start_record: insert into map.key=%s, map size=%d",
-              ss_key.str().c_str(), g_map_vr.size());
+    srs_trace("do_start_record: insert into map.key=%s", key.c_str());
 
     return ret;
 }

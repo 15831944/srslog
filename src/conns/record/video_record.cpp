@@ -14,13 +14,14 @@ VideoRecord::~VideoRecord()
 {
 
 }
-bool VideoRecord::init(const char *hls_path, const char *tmp_ts_path, const char *mp4_path, const char* ffmpeg_cmd)
+bool VideoRecord::init(std::string key, const char *hls_path, const char *tmp_ts_path, const char *mp4_path, const char* ffmpeg_cmd)
 {
     if (0 == hls_path || 0 == hls_path || 0 == mp4_path || 0 == ffmpeg_cmd) {
         has_init_ = false;
 
         return false;
     } else {
+        key_ = key;
         hls_path_ = hls_path;
         tmp_ts_path_ = tmp_ts_path;
         mp4_path_ = mp4_path;
@@ -51,10 +52,6 @@ bool VideoRecord::start_record(const char *stream_name, const char *publisher, c
     }
 
     if (!create_mp4_folder()) {
-        return false;
-    }
-
-    if (!create_recording_folder()) {
         return false;
     }
 
@@ -126,17 +123,12 @@ bool VideoRecord::stop_record()
                   << mp4.str().c_str();
     system(transcode_cmd.str().c_str());
 
-    srs_trace("transcode cmd=%s", transcode_cmd.str().c_str());
+    srs_trace("after transcode cmd, record file=%s", mp4.str().c_str());
 
     //delete all ts tmp files.
     std::stringstream del_ts_cmd;
     del_ts_cmd << "rm -rf " << ts_full_path_.c_str();
     system(del_ts_cmd.str().c_str());
-
-    //delete recording file
-    std::stringstream del_recordingfile;
-    del_recordingfile << "rm -f " << recording_path_ << "/" << stream_name_ << ":" << publisher_ << ":" << mp4filename_;
-    system(del_recordingfile.str().c_str());
 
     return true;
 }
@@ -193,32 +185,6 @@ bool VideoRecord::create_mp4_folder()
     }
 }
 
-bool VideoRecord::create_recording_folder()
-{
-    if (!has_init_) {
-        return false;
-    }
-
-    std::stringstream path;
-    path << hls_path_ << "/" << "recording";
-
-    recording_path_ = path.str();
-
-    if (0 == access(path.str().c_str(), F_OK)) {
-        return true;
-    }
-
-    std::stringstream create_cmd;
-    create_cmd << "mkdir -p " << path.str().c_str();
-    system(create_cmd.str().c_str());
-
-    if (0 == access(path.str().c_str(), F_OK)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 void* copy_ts(void* data)
 {
     VideoRecord *vr = (VideoRecord*)(data);
@@ -226,11 +192,10 @@ void* copy_ts(void* data)
         return NULL;
     }
 
-    std::stringstream key;
-    key << vr->publisher_ << ":" << vr->stream_name_;
+    std::string key = vr->key_;
 
     std::stringstream cmd;
-    cmd << "EXISTS " << key.str().c_str();
+    cmd << "EXISTS " << key.c_str();
 
     std::vector<std::string> last_tsfiles;//保存最新的ts文件列表
 
@@ -252,7 +217,7 @@ void* copy_ts(void* data)
         }
 
         if (0 == res) {
-            srs_trace("when copy ts, no key in redis, may be has stop.");
+            srs_trace("when copy ts, no key in redis, key=%s", key.c_str());
             break;
         }
 

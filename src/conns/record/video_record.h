@@ -19,7 +19,7 @@ public:
     ~VideoRecord();
 
 public:
-    bool init(const char* hls_path, const char* tmp_ts_path,
+    bool init(std::string key, const char* hls_path, const char* tmp_ts_path,
               const char* mp4_path, const char* ffmpeg_cmd);
     bool start_record(const char* stream_name, const char* publisher, const char* mp4filename);
     bool stop_record();
@@ -31,14 +31,14 @@ public:
 private:
     bool create_ts_folder();
     bool create_mp4_folder();
-    bool create_recording_folder();
     void get_all_ts(std::vector<std::string> &tsfiles);
     void get_file_last_modify_time(std::string filename, time_t &modify_time);
 public:
+    std::string key_;
     std::string hls_path_; //hls路径，不包含live
     std::string tmp_ts_path_;//ts临时文件路径
     std::string mp4_path_;//生成mp4文件路径
-    std::string recording_path_;//记录当前录像情况的路径
+
     std::string stream_name_;//流名
     std::string publisher_;//发布者
     std::string mp4filename_;//录像文件名

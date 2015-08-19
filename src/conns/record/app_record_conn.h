@@ -34,12 +34,16 @@
 #define TYPE_STOP_RECORD    1001
 #define TYPE_DELETE_RECORD  1002
 
-#define RET_CODE_SUCCESS                        0
-#define RET_CODE_HAS_RECORDING                  1
-#define RET_CODE_STOPRECORD_FAILED              2
-#define RET_CODE_INSERT_REDIS_FAILED            3
-#define RET_CODE_PONIT_NULL                     4
-#define RET_CODE_INIT_RECORD_FAILED             5
+enum {
+    RET_CODE_SUCCESS                       = 0,
+    RET_FILE_FORMAT_NOT_MP4,
+    RET_CODE_HAS_RECORDING,
+    RET_CODE_STOPRECORD_FAILED,
+    RET_CODE_INSERT_REDIS_FAILED ,
+    RET_CODE_PONIT_NULL,
+    RET_CODE_INIT_RECORD_FAILED,
+    RET_INPUTPARAMS_ERROR,
+};
 
 class SrsRecordConn : public virtual SrsConnection, public virtual ISrsReloadHandler
 {
@@ -60,12 +64,12 @@ private:
     void handle_client_data(const std::string &data);
     int handle_start_record(std::string stream, std::string publisher, std::string file, std::string timeout);
     int handle_stop_record(std::string stream, std::string publisher, std::string file);
-    int handle_delete_record(std::string stream, std::string publisher, std::string file);    
+    int handle_delete_record(std::string stream, std::string publisher, std::string file);
 private:
     //for start record.
     bool ask_if_recording(const std::string &key);
-    bool insert_record_redis(std::string stream, std::string publisher, std::string file, std::string timeout);
-    int do_start_record(std::string stream, std::string publisher, std::string file);
+    bool insert_record_redis(std::string key, std::string stream, std::string publisher, std::string timeout);
+    int do_start_record(std::string key, std::string stream, std::string publisher, std::string file);
     int send_client(const std::string &res);
 private:
     SrsStSocket* skt;
