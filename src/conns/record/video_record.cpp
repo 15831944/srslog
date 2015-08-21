@@ -125,6 +125,20 @@ bool VideoRecord::stop_record()
 
     srs_trace("after transcode cmd, record file=%s", mp4.str().c_str());
 
+    int cnt = 0;
+    while (cnt++ < 172800) {
+        if (0 == access(mp4.str().c_str(), F_OK)) {
+            srs_trace("record file done. %s", mp4.str().c_str());
+            break;
+        }
+
+        st_sleep(1);
+    }
+
+    if (172800 == cnt) {
+        srs_error("record file not done.%s", mp4.str().c_str());
+    }
+
     //delete all ts tmp files.
     std::stringstream del_ts_cmd;
     del_ts_cmd << "rm -rf " << ts_full_path_.c_str();
@@ -222,7 +236,7 @@ void* copy_ts(void* data)
         }
 
         vr->do_copy_job(last_tsfiles);
-        sleep(3);
+        sleep(10);
     }
 
     pthread_exit(NULL);
@@ -299,10 +313,14 @@ void VideoRecord::do_copy_job(std::vector<std::string> &last_tsfiles)
         std::stringstream ts_src;
         ts_src << root_hls_ << "/live/" << ts;
 
+        time_t srcfile_time = 0;
+        get_file_last_modify_time(ts_src.str(), srcfile_time);
+        if (time(NULL) - srcfile_time > 300) {//more than 300
+            continue;
+        }
+
         if (0 == access(ts_dst.str().c_str(), F_OK)) {//ts临时目录中已经有了这个文件,
             //get the time of the two files, if  time interval > 30s, then copy it to tstmp directory.
-            time_t srcfile_time = 0;
-            get_file_last_modify_time(ts_src.str(), srcfile_time);
             time_t dstfile_time = 0;
             get_file_last_modify_time(ts_dst.str(), dstfile_time);
 
