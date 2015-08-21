@@ -94,7 +94,7 @@ bool VideoRecord::stop_record()
 
     //add endlist to m3u8 file
     std::stringstream addendlist;
-    addendlist << "echo " << "#EXT-X-ENDLIST" << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
+    addendlist << "echo " << "\"#EXT-X-ENDLIST\"" << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
     system(addendlist.str().c_str());
 
     std::stringstream concat_ts;
@@ -232,7 +232,7 @@ void* copy_ts(void* data)
 
         vr->do_copy_job();
 
-        st_sleep(10);
+        sleep(10);
     }
 
     pthread_exit(NULL);
@@ -271,8 +271,6 @@ void VideoRecord::do_copy_job()
         fclose(fm3u8);
     }
 
-    srs_trace("m3u8 origin: %s: ", tsinfo_buff);
-
     std::vector<std::string> tsinfo_single;
     while (str_tsinfo.length() > 0) {
         int npos = str_tsinfo.find("\n");
@@ -300,7 +298,8 @@ void VideoRecord::do_copy_job()
         for (;i < M3U8_HEADER_LINE;++i) {
             std::string single = tsinfo_single.at(i);
             std::stringstream info;
-            info << "echo " << single.c_str() << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
+            info << "echo " << "\"" << single.c_str() << "\"" <<
+                    " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
             system(info.str().c_str());
         }
 
@@ -311,7 +310,6 @@ void VideoRecord::do_copy_job()
     std::string tsfile;
     for (;i < tsinfo_single.size(); ++i) {
         std::string single = tsinfo_single.at(i);
-        srs_trace("single info: %s", single.c_str());
 
         //m3u8 header.
         if (single.find("EXTINF") != std::string::npos) {
@@ -359,9 +357,11 @@ void VideoRecord::do_copy_job()
                 system(copy_cmd.str().c_str());
 
                 std::stringstream write_exinfo;
-                write_exinfo << "echo " << extinf.c_str() << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
+                write_exinfo << "echo " << "\"" << extinf.c_str() << "\"" <<
+                                " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
                 std::stringstream write_ts;
-                write_ts << "echo " << tsfile.c_str() << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
+                write_ts << "echo " << "\"" << tsfile.c_str() << "\"" <<
+                            " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
                 system(write_exinfo.str().c_str());
                 system(write_ts.str().c_str());
             }
@@ -372,9 +372,9 @@ void VideoRecord::do_copy_job()
             system(copy_ts.str().c_str());
 
             std::stringstream write_exinfo;
-            write_exinfo << "echo " << extinf.c_str() << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
+            write_exinfo << "echo " << "\"" << extinf.c_str() << "\"" << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
             std::stringstream write_ts;
-            write_ts << "echo " << tsfile.c_str() << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
+            write_ts << "echo " << "\"" << tsfile.c_str() << "\"" << " >> " << root_m3u8_ << "/" << key_.c_str() << ".m3u8";
             system(write_exinfo.str().c_str());
             system(write_ts.str().c_str());
         }
@@ -395,7 +395,7 @@ void VideoRecord::get_all_ts(std::vector<std::string> &tsfiles)
         if (0 == access(tslistfile.str().c_str(), F_OK)) {
             break;
         }
-        st_sleep(1);
+        sleep(1);
     }
 
     std::string str_tsinfo;
