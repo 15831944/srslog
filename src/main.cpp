@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     int ret = ERROR_SUCCESS;
 
     if (argc < 2) {
-        printf("not start, useage: app configfile.");
+        printf("erro: not start, useage: app configfile.\n");
         return ret;
     }
 

@@ -140,9 +140,9 @@ void SrsRecordConn::handle_client_data(const std::string &data)
 }
 
 int SrsRecordConn::handle_start_record(std::string stream, std::string publisher,
-                                       std::string file, std::string timeout)
+                                       std::string key, std::string timeout)
 {
-    if (stream.length() <= 0 || publisher.length() <= 0 || file.length() <= 0) {
+    if (stream.length() <= 0 || publisher.length() <= 0 || key.length() <= 0) {
         srs_error("handle_start_record: input param illigal.");
         return RET_INPUTPARAMS_ERROR;
     }
@@ -152,13 +152,6 @@ int SrsRecordConn::handle_start_record(std::string stream, std::string publisher
     }
 
     int ret = RET_CODE_SUCCESS;
-
-    std::string key;
-    int npos = file.find(".mp4");
-    if (npos == std::string::npos) {
-        return RET_FILE_FORMAT_NOT_MP4;
-    }
-    key = file.substr(0, npos);
 
     //asd if recording
     if (ask_if_recording(key)){
@@ -172,25 +165,17 @@ int SrsRecordConn::handle_start_record(std::string stream, std::string publisher
     }
 
     //start record.
-    ret = do_start_record(key, stream, publisher, file);
+    ret = do_start_record(key, stream, publisher);
 
     return ret;
 }
 
-int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher, std::string file)
+int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher, std::string key)
 {
-    if (stream.length() <=0 || publisher.length() <= 0 || file.length() <= 0) {
+    if (stream.length() <=0 || publisher.length() <= 0 || key.length() <= 0) {
         srs_error("handle_stop_record: input params error.");
         return RET_INPUTPARAMS_ERROR;
     }
-
-    std::string key;
-    int npos = file.find(".mp4");
-    if (npos == std::string::npos) {
-        srs_error("handle_stop_record: file format error.");
-        return RET_FILE_FORMAT_NOT_MP4;
-    }
-    key = file.substr(0, npos);
 
     //del from redis data.
     {
@@ -238,21 +223,28 @@ int SrsRecordConn::handle_stop_record(std::string stream, std::string publisher,
     return RET_CODE_SUCCESS;
 }
 
-int SrsRecordConn::handle_delete_record(std::string stream, std::string publisher, std::string file)
+int SrsRecordConn::handle_delete_record(std::string stream, std::string publisher, std::string key)
 {
     int ret = RET_CODE_SUCCESS;
 
     //in case client skip stop.
-    handle_stop_record(stream, publisher, file);
+    handle_stop_record(stream, publisher, key);
 
-    std::string hlspath = g_config->get_hls_path();
+    std::string roothls = g_config->get_hls_path();
 
     std::stringstream mp4_full_path;
-    mp4_full_path << hlspath.c_str() << "/mp4/" << publisher.c_str() << "/" <<file.c_str();
-
+    mp4_full_path << roothls.c_str() << "/mp4/"
+                  << publisher.c_str() << "/" << key.c_str();
     std::stringstream del_mp4_cmd;
-    del_mp4_cmd << "rm -r " << mp4_full_path.str().c_str();
+    del_mp4_cmd << "rm -rf " << mp4_full_path.str().c_str();
     system(del_mp4_cmd.str().c_str());
+
+    std::stringstream m3u8_full_path;
+    m3u8_full_path << roothls.c_str() << "/m3u8/"
+                   << publisher.c_str() << "/" << key.c_str();
+    std::stringstream del_m3u8_cmd;
+    del_m3u8_cmd << "rm -rf " << del_m3u8_cmd.str().c_str();
+    system(del_m3u8_cmd.str().c_str());
 
     return ret;
 }
@@ -311,7 +303,9 @@ bool SrsRecordConn::insert_record_redis(std::string key,
     return true;
 }
 
-int SrsRecordConn::do_start_record(std::string key, std::string stream, std::string publisher, std::string file)
+int SrsRecordConn::do_start_record(std::string key,
+                                   std::string stream,
+                                   std::string publisher)
 {
     int ret = RET_CODE_SUCCESS;
 
@@ -320,22 +314,21 @@ int SrsRecordConn::do_start_record(std::string key, std::string stream, std::str
         return RET_CODE_PONIT_NULL;
     }
 
-    std::stringstream hls_path;
-    hls_path << g_config->get_hls_path().c_str();
-    std::stringstream tmp_ts_path;
-    tmp_ts_path << g_config->get_hls_path().c_str() << "/tstmp";
+    std::string roothls = g_config->get_hls_path();
+    std::stringstream m3u8_path_;
+    m3u8_path_ << roothls.c_str() << "/m3u8/" << publisher.c_str() << "/" <<  key.c_str();
     std::stringstream mp4_path;
-    mp4_path << g_config->get_hls_path().c_str() << "/mp4";
+    mp4_path << roothls.c_str() << "/mp4/" << publisher.c_str() << "/" << key.c_str();
 
-    if ( !vr->init(key, hls_path.str().c_str(),
-                   tmp_ts_path.str().c_str(),
+    if ( !vr->init(key, roothls.c_str(),
+                   m3u8_path_.str().c_str(),
                    mp4_path.str().c_str(),
                    "./ffmpeg") )
     {
         return RET_CODE_INIT_RECORD_FAILED;
     }
 
-    if (!vr->start_record(stream.c_str(), publisher.c_str(), file.c_str())) {
+    if (!vr->start_record(stream.c_str(), publisher.c_str())) {
         return RET_CODE_INIT_RECORD_FAILED;
     }
 

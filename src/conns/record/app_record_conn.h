@@ -69,7 +69,7 @@ private:
     //for start record.
     bool ask_if_recording(const std::string &key);
     bool insert_record_redis(std::string key, std::string stream, std::string publisher, std::string timeout);
-    int do_start_record(std::string key, std::string stream, std::string publisher, std::string file);
+    int do_start_record(std::string key, std::string stream, std::string publisher);
     int send_client(const std::string &res);
 private:
     SrsStSocket* skt;
