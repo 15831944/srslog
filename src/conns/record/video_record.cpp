@@ -243,7 +243,7 @@ void VideoRecord::do_copy_job()
     std::stringstream m3u8file;
     m3u8file << root_hls_.c_str() << "/live/" << stream_name_.c_str() << ".m3u8";
     if (0 != access(m3u8file.str().c_str(), F_OK)) {
-        srs_error("do_copy_job: can not find m3u8 file, make sure living ?");
+        srs_error("do_copy_job: can not find m3u8 file, key=%s, stream=%s", key_.c_str(), stream_name_.c_str());
         return;
     }
 
